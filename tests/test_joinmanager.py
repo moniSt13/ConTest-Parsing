@@ -9,7 +9,6 @@ def test_start():
     joinmanager.settings.source = Path(
         "/home/michaelleitner/Documents/contest/Data_TrainTicket/"
     )
-    joinmanager.settings.test_mode = True
     joinmanager.process()
 
 

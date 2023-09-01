@@ -13,6 +13,8 @@ class ParseSettings:
         self.additional_name_tracing: str = "traces-"
         self.additional_name_metrics: str = "metrics-"
         self.final_name_suffix: str = "-final.csv"
+        self.clear_output: bool = True
+        self.print_statistics: bool = True
 
     def __str__(self):
         return (
@@ -25,4 +27,7 @@ class ParseSettings:
             f"drop_null: {self.drop_null}\n"
             f"additional_name_tracing: {self.additional_name_tracing}\n"
             f"additional_name_metrics: {self.additional_name_metrics}\n"
+            f"final_name_suffix: {self.final_name_suffix}\n"
+            f"clear_output: {self.clear_output}\n"
+            f"print_statistics: {self.print_statistics}\n"
         )
