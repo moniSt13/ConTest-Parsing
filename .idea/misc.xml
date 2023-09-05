@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="sdkUUID" value="b79b3728-742b-46df-b4d8-236552249c54" />
+    <option name="enabledOnReformat" value="true" />
+    <option name="sdkUUID" value="2bd0c76d-7d75-4190-9b94-0b5dc406d48c" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_20" project-jdk-name="Python 3.11 (ConTest-Library)" project-jdk-type="Python SDK">
-    <output url="file://$PROJECT_DIR$/out" />
-  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (ConTest-Library)" project-jdk-type="Python SDK" />
 </project>

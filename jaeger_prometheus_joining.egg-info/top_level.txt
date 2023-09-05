@@ -1,2 +1,2 @@
-jaeger-prometheus-joining
+jaeger_prometheus_joining
 tests
