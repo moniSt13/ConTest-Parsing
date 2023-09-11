@@ -3,7 +3,9 @@ from pathlib import Path
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 from jaeger_prometheus_joining.transformationscripts.FileConcat import FileConcat
-from jaeger_prometheus_joining.transformationscripts.FilepathFinder import FilepathFinder
+from jaeger_prometheus_joining.transformationscripts.FilepathFinder import (
+    FilepathFinder,
+)
 from jaeger_prometheus_joining.transformationscripts.Joiner import Joiner
 from jaeger_prometheus_joining.transformationscripts.MetricsParser import MetricsParser
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
@@ -17,17 +19,7 @@ class JoinManager:
     def process(self):
         path_list = FilepathFinder(self.settings).find_files()
 
-        stats = '\n'.join([f"{k}: {v}" for k, v in self.__calculate_statistics(path_list).items()])
-
-        if self.settings.print_statistics:
-            print(
-                f"\n\n\n___ Following settings found: \n"
-                f"{self.settings}\n\n"
-                f"___ Found following folders to process: \n"
-                f"{stats}\n\n"
-                f"___ Processing time: \n"
-            )
-
+        self.__print_statistics(path_list)
         self.__clear_output()
         self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
@@ -91,13 +83,26 @@ class JoinManager:
         file_concat.start(output_path, additional_name)
 
     @timer
-    def __calculate_statistics(self, path_list: dict) -> dict:
-        found_folders = {}
-        for name, folder in path_list.items():
-            mon_size = sum([x.stat().st_size for x in folder["monitoring"]]) / 1_000_000
-            trace_size = sum([x.stat().st_size for x in folder["traces"]]) / 1_000_000
-            found_folders[
-                name
-            ] = f"{mon_size}MB of metric data, {trace_size}MB of trace data"
+    def __print_statistics(self, path_list: dict):
+        if self.settings.print_statistics:
+            found_folders = {}
+            for name, folder in path_list.items():
+                mon_size = (
+                    sum([x.stat().st_size for x in folder["monitoring"]]) / 1_000_000
+                )
+                trace_size = (
+                    sum([x.stat().st_size for x in folder["traces"]]) / 1_000_000
+                )
+                found_folders[
+                    name
+                ] = f"{mon_size}MB of metric data, {trace_size}MB of trace data"
 
-        return found_folders
+            stats = "\n".join([f"{k}: {v}" for k, v in found_folders.items()])
+
+            print(
+                f"\n\n\n___ Following settings found: \n"
+                f"{self.settings}\n\n"
+                f"___ Found following folders to process: \n"
+                f"{stats}\n\n"
+                f"___ Processing time: \n"
+            )
