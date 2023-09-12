@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
+from jaeger_prometheus_joining.featureengineering.TreeBuilder import TreeBuilder
 from jaeger_prometheus_joining.transformationscripts.FileConcat import FileConcat
 from jaeger_prometheus_joining.transformationscripts.FilepathFinder import (
     FilepathFinder,
@@ -24,6 +25,8 @@ class JoinManager:
         self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
         self.__join()
+        self.__feature_engineering()
+
 
     @timer
     def __clear_output(self):
@@ -66,11 +69,11 @@ class JoinManager:
         joiner = Joiner(self.settings)
 
         for service in self.settings.out.iterdir():
-            if not service.is_dir():
+            if service.is_file():
                 continue
 
             output_path = self.settings.out.joinpath(
-                service.name + self.settings.final_name_suffix
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
             tracing_filepath = service.joinpath("traces", "traces-merged-file.parquet")
             metrics_filepaths = list(service.joinpath("monitoring").glob("*.parquet"))
@@ -78,9 +81,29 @@ class JoinManager:
             joiner.start(tracing_filepath, metrics_filepaths, output_path)
 
     @timer
+    def __feature_engineering(self):
+        tree_builder = TreeBuilder(self.settings)
+    
+        for service in self.settings.out.iterdir():
+            if service.is_file():
+                continue
+
+            source_path = self.settings.out.joinpath(
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
+            )
+
+            output_path = self.settings.out.joinpath(service.name, 'trace-length-calc.csv')
+
+            tree_builder.start(source_path, output_path)
+
+    @timer
     def __concat_files(self, output_path: Path, additional_name: str):
         file_concat = FileConcat(self.settings)
         file_concat.start(output_path, additional_name)
+
+
+
+
 
     @timer
     def __print_statistics(self, path_list: dict):

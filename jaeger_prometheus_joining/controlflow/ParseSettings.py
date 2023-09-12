@@ -12,7 +12,7 @@ class ParseSettings:
         self.drop_null: bool = True
         self.additional_name_tracing: str = "traces-"
         self.additional_name_metrics: str = "metrics-"
-        self.final_name_suffix: str = "-final.csv"
+        self.final_name_suffix: str = "final"
         self.clear_output: bool = True
         self.print_statistics: bool = True
 
