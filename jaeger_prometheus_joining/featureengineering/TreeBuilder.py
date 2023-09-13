@@ -40,6 +40,8 @@ class TreeBuilder:
             tree.settings.print_data_with_accessing_field = True
             tree.settings.accessing_field = 1
 
+            print(tree)
+
             final_df_list.append(pl.from_dicts(tree.to_polars_readable_format()))
 
         return pl.concat(final_df_list)
