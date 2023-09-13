@@ -4,7 +4,7 @@ from controlflow.JoinManager import JoinManager
 def test_start():
     joinmanager = JoinManager()
     joinmanager.settings.rounding_acc = "5m"
-    joinmanager.settings.test_mode = True
+    joinmanager.settings.test_mode = False
     joinmanager.settings.out = "../out"
     joinmanager.settings.source = (
         "/home/michaelleitner/Documents/contest/Data_TrainTicket/"

@@ -34,10 +34,9 @@ class FilepathFinder:
                 del path_list[service.name]
 
         if self.settings.test_mode:
-            temp_list = {}
-            temp_list['ts-admin-basic-info-service-sprintstarterweb_1.5.22'] = path_list['ts-admin-basic-info-service-sprintstarterweb_1.5.22']
-            path_list = temp_list
-
+            # temp_list = {}
+            # temp_list['ts-admin-basic-info-service-sprintstarterweb_1.5.22'] = path_list['ts-admin-basic-info-service-sprintstarterweb_1.5.22']
+            # path_list = temp_list
             while len(path_list.keys()) > 2:
                 path_list.popitem()
 

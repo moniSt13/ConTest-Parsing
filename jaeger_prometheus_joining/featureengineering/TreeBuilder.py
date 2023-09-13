@@ -16,8 +16,9 @@ class TreeBuilder:
     def start(self, source_path: Path, output_path):
         df = pl.read_csv(source_path)
 
-        final_df = self.__parse_and_build_tree(df)
-        self.__write_to_disk(final_df, output_path)
+        trace_stats_df = self.__parse_and_build_tree(df)
+        updated_df = self.__join_with_data(df, trace_stats_df)
+        self.__write_to_disk(updated_df, output_path)
 
     def __parse_and_build_tree(self, df: pl.DataFrame) -> pl.DataFrame:
         def __build_tree(cur_node: Node):
@@ -40,11 +41,12 @@ class TreeBuilder:
             tree.settings.print_data_with_accessing_field = True
             tree.settings.accessing_field = 1
 
-            print(tree)
-
             final_df_list.append(pl.from_dicts(tree.to_polars_readable_format()))
 
         return pl.concat(final_df_list)
+
+    def __join_with_data(self, df: pl.DataFrame, trace_stats_df: pl.DataFrame) -> pl.DataFrame:
+        return df.join(trace_stats_df, on="spanID")
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
         if not os.path.exists(output_path.parents[0]):
