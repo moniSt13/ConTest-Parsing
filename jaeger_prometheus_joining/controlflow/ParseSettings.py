@@ -15,6 +15,8 @@ class ParseSettings:
         self.final_name_suffix: str = "final"
         self.clear_output: bool = True
         self.print_statistics: bool = True
+        self.visualize_graph: bool = True
+        self.neo4j_uri: str = "neo4j://localhost:7687"
 
     @property
     def source(self):

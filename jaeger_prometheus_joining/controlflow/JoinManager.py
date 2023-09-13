@@ -11,6 +11,7 @@ from jaeger_prometheus_joining.transformationscripts.Joiner import Joiner
 from jaeger_prometheus_joining.transformationscripts.MetricsParser import MetricsParser
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
 from jaeger_prometheus_joining.util.timedecorator import timer
+from util.visualization.GraphGenerator import GraphGenerator
 
 
 class JoinManager:
@@ -26,7 +27,7 @@ class JoinManager:
         self.__parse_traces(path_list)
         self.__join()
         self.__feature_engineering()
-
+        self.__generate_graph()
 
     @timer
     def __clear_output(self):
@@ -83,7 +84,7 @@ class JoinManager:
     @timer
     def __feature_engineering(self):
         tree_builder = TreeBuilder(self.settings)
-    
+
         for service in self.settings.out.iterdir():
             if service.is_file():
                 continue
@@ -92,18 +93,34 @@ class JoinManager:
                 service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
 
-            output_path = self.settings.out.joinpath(service.name, 'trace-length-calc.csv')
+            output_path = source_path
 
             tree_builder.start(source_path, output_path)
+
+    @timer
+    def __generate_graph(self):
+        if not self.settings.visualize_graph:
+            return
+
+        graph_generator = GraphGenerator(self.settings)
+
+        for service in self.settings.out.iterdir():
+            if service.is_file():
+                continue
+
+            source_path = self.settings.out.joinpath(
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
+            )
+
+            output_path = self.settings.out.joinpath(
+                service.name, "visualized-graph.html"
+            )
+            graph_generator.start(source_path, output_path)
 
     @timer
     def __concat_files(self, output_path: Path, additional_name: str):
         file_concat = FileConcat(self.settings)
         file_concat.start(output_path, additional_name)
-
-
-
-
 
     @timer
     def __print_statistics(self, path_list: dict):
