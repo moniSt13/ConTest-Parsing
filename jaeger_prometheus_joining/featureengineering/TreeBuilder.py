@@ -37,9 +37,7 @@ class TreeBuilder:
 
             __build_tree(root)
             tree = root.init_tree()
-
-            tree.settings.print_data_with_accessing_field = True
-            tree.settings.accessing_field = 1
+            tree.settings = self.settings.tree_settings
 
             final_df_list.append(pl.from_dicts(tree.to_polars_readable_format()))
 

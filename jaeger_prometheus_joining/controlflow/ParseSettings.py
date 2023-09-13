@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from contest_tree.model.TreeSettings import TreeSettings
+
 
 class ParseSettings:
     def __init__(self):
@@ -17,6 +19,8 @@ class ParseSettings:
         self.print_statistics: bool = True
         self.visualize_graph: bool = True
         self.neo4j_uri: str = "neo4j://localhost:7687"
+        self.neo4j_container_name: str = "neo4j"
+        self.tree_settings: TreeSettings = TreeSettings()
 
     @property
     def source(self):
