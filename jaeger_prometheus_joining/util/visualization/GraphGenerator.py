@@ -25,7 +25,10 @@ class GraphGenerator:
                 print(e)
 
     def __load_database(self, source_path: Path):
-        subprocess.call(f"docker cp '{source_path.absolute()}' {self.settings.neo4j_container_name}:/var/lib/neo4j/import", shell=True)
+        subprocess.call(
+            f"docker cp '{source_path.absolute()}' {self.settings.neo4j_container_name}:/var/lib/neo4j/import",
+            shell=True,
+        )
 
         with GraphDatabase.driver(self.settings.neo4j_uri, auth=None) as driver:
             try:

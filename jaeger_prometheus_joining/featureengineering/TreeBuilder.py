@@ -43,7 +43,9 @@ class TreeBuilder:
 
         return pl.concat(final_df_list)
 
-    def __join_with_data(self, df: pl.DataFrame, trace_stats_df: pl.DataFrame) -> pl.DataFrame:
+    def __join_with_data(
+        self, df: pl.DataFrame, trace_stats_df: pl.DataFrame
+    ) -> pl.DataFrame:
         return df.join(trace_stats_df, on="spanID")
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
