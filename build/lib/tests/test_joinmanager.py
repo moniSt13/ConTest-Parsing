@@ -1,16 +1,18 @@
-from pathlib import Path
-
 from controlflow.JoinManager import JoinManager
 
 
 def test_start():
-    joinmanager = JoinManager()
-    joinmanager.settings.rounding_acc = "1m"
-    joinmanager.settings.test_mode = True
-    joinmanager.settings.out = "../out"
-    joinmanager.settings.source = "/home/michaelleitner/Documents/contest/Data_TrainTicket/"
+    join_manager = JoinManager()
+    join_manager.settings.rounding_acc = "5m"
+    join_manager.settings.test_mode = False
+    join_manager.settings.out = "../out"
+    join_manager.settings.source = (
+        "/home/michaelleitner/Documents/contest/Data_TrainTicket/"
+    )
+    join_manager.settings.tree_settings.print_data_with_accessing_field = True
+    join_manager.settings.tree_settings.accessing_field = 1
 
-    joinmanager.process()
+    join_manager.process()
 
 
 test_start()

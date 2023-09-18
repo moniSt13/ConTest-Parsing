@@ -1,3 +1,6 @@
 pandas
 polars
 pyarrow
+neo4j
+neo4jvis
+ipython
