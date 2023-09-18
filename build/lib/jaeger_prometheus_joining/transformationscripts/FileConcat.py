@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 import polars as pl
+
+from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
 class FileConcat:

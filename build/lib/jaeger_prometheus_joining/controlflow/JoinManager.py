@@ -11,7 +11,7 @@ from jaeger_prometheus_joining.transformationscripts.Joiner import Joiner
 from jaeger_prometheus_joining.transformationscripts.MetricsParser import MetricsParser
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
 from jaeger_prometheus_joining.util.timedecorator import timer
-from util.visualization.GraphGenerator import GraphGenerator
+from jaeger_prometheus_joining.util.visualization.GraphGenerator import GraphGenerator
 
 
 class JoinManager:

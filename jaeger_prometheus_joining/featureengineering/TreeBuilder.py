@@ -6,7 +6,7 @@ from contest_tree.model.Node import Node
 from contest_tree.model.Root import Root
 from polars import col
 
-from controlflow.ParseSettings import ParseSettings
+from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
 class TreeBuilder:

@@ -4,7 +4,7 @@ from pathlib import Path
 from neo4j import GraphDatabase
 from neo4jvis import StyledGraph
 
-from controlflow.ParseSettings import ParseSettings
+from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
 class GraphGenerator:
