@@ -13,10 +13,28 @@ jedoch bietet sich ein Left-Join auch nicht an, da es bei über 2000 Prometheus-
 * [Funktionsweise und einzelne Notebooks](meta/wiki/documentation.md)
 * [Erkenntnisse über Daten](meta/wiki/insights-experience.md)
 
+#### Beispielverwendung:
+```
+from jaeger_prometheus_joining.controlflow.JoinManager import JoinManager
+
+
+def main():
+    manager = JoinManager()
+    manager.settings.source = "/home/gepardec/Documents/contest/Data_TrainTicket"
+    manager.settings.test_mode = False
+    manager.settings.tree_settings.print_data_with_accessing_field = True
+    manager.settings.tree_settings.accessing_field = 1
+    manager.settings.out = "./out"
+    manager.process()
+
+
+main()
+```
+
 ---
 
 #### README minimal outdated (TODO)! 
-* Mehr Settings
+* Höhere Anzahl an Settings
 * Keine Jupyter-Notebooks, sondern Python-Klassen
 * Implementierung minimal optimiert
 * Erkenntnisse blieben gleich!
