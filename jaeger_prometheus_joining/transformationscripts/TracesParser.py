@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
 
-from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 import pandas as pd
 import polars as pl
 from polars import col, Datetime
+
+from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
 class TracesParser:

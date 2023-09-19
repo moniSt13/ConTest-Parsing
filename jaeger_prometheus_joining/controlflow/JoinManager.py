@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
+from jaeger_prometheus_joining.featureengineering.TreeBuilder import TreeBuilder
 from jaeger_prometheus_joining.transformationscripts.FileConcat import FileConcat
 from jaeger_prometheus_joining.transformationscripts.FilepathFinder import (
     FilepathFinder,
@@ -10,6 +11,7 @@ from jaeger_prometheus_joining.transformationscripts.Joiner import Joiner
 from jaeger_prometheus_joining.transformationscripts.MetricsParser import MetricsParser
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
 from jaeger_prometheus_joining.util.timedecorator import timer
+from jaeger_prometheus_joining.util.visualization.GraphGenerator import GraphGenerator
 
 
 class JoinManager:
@@ -24,6 +26,8 @@ class JoinManager:
         self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
         self.__join()
+        self.__feature_engineering()
+        self.__generate_graph()
 
     @timer
     def __clear_output(self):
@@ -66,16 +70,52 @@ class JoinManager:
         joiner = Joiner(self.settings)
 
         for service in self.settings.out.iterdir():
-            if not service.is_dir():
+            if service.is_file():
                 continue
 
             output_path = self.settings.out.joinpath(
-                service.name + self.settings.final_name_suffix
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
             tracing_filepath = service.joinpath("traces", "traces-merged-file.parquet")
             metrics_filepaths = list(service.joinpath("monitoring").glob("*.parquet"))
 
             joiner.start(tracing_filepath, metrics_filepaths, output_path)
+
+    @timer
+    def __feature_engineering(self):
+        tree_builder = TreeBuilder(self.settings)
+
+        for service in self.settings.out.iterdir():
+            if service.is_file():
+                continue
+
+            source_path = self.settings.out.joinpath(
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
+            )
+
+            output_path = source_path
+
+            tree_builder.start(source_path, output_path)
+
+    @timer
+    def __generate_graph(self):
+        if not self.settings.visualize_graph:
+            return
+
+        graph_generator = GraphGenerator(self.settings)
+
+        for service in self.settings.out.iterdir():
+            if service.is_file():
+                continue
+
+            source_path = self.settings.out.joinpath(
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
+            )
+
+            output_path = self.settings.out.joinpath(
+                service.name, "visualized-graph.html"
+            )
+            graph_generator.start(source_path, output_path)
 
     @timer
     def __concat_files(self, output_path: Path, additional_name: str):

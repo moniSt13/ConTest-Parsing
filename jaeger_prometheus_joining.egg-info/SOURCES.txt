@@ -8,6 +8,8 @@ jaeger_prometheus_joining.egg-info/top_level.txt
 jaeger_prometheus_joining/controlflow/JoinManager.py
 jaeger_prometheus_joining/controlflow/ParseSettings.py
 jaeger_prometheus_joining/controlflow/__init__.py
+jaeger_prometheus_joining/featureengineering/TreeBuilder.py
+jaeger_prometheus_joining/featureengineering/__init__.py
 jaeger_prometheus_joining/transformationscripts/FileConcat.py
 jaeger_prometheus_joining/transformationscripts/FilepathFinder.py
 jaeger_prometheus_joining/transformationscripts/Joiner.py
@@ -16,5 +18,7 @@ jaeger_prometheus_joining/transformationscripts/TracesParser.py
 jaeger_prometheus_joining/transformationscripts/__init__.py
 jaeger_prometheus_joining/util/__init__.py
 jaeger_prometheus_joining/util/timedecorator.py
+jaeger_prometheus_joining/util/visualization/GraphGenerator.py
+jaeger_prometheus_joining/util/visualization/__init__.py
 tests/__init__.py
 tests/test_joinmanager.py

@@ -1,11 +1,12 @@
+import json
+import os
 from pathlib import Path
 
-from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
-import json
+import pandas as pd
 import polars as pl
 from polars import last, col
-import pandas as pd
-import os
+
+from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
 class MetricsParser:

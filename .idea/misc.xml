@@ -4,4 +4,7 @@
     <option name="sdkUUID" value="2bd0c76d-7d75-4190-9b94-0b5dc406d48c" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (ConTest-Library)" project-jdk-type="Python SDK" />
+  <component name="PyCharmDSProjectLayout">
+    <option name="id" value="JupyterRightHiddenStructureLayout" />
+  </component>
 </project>
