@@ -11,6 +11,7 @@ def test_start():
     )
     join_manager.settings.tree_settings.print_data_with_accessing_field = True
     join_manager.settings.tree_settings.accessing_field = 1
+    join_manager.settings.visualize_graph = False
 
     join_manager.process()
 
