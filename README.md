@@ -13,6 +13,14 @@ jedoch bietet sich ein Left-Join auch nicht an, da es bei über 2000 Prometheus-
 * [Funktionsweise und einzelne Notebooks](meta/wiki/documentation.md)
 * [Erkenntnisse über Daten](meta/wiki/insights-experience.md)
 
+---
+
+#### README minimal outdated (TODO)! 
+* Mehr Settings
+* Keine Jupyter-Notebooks, sondern Python-Klassen
+* Implementierung minimal optimiert
+* Erkenntnisse blieben gleich!
+
 
 
 
