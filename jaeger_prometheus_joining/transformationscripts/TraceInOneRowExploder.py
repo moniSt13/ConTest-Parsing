@@ -52,7 +52,7 @@ class TracesInOneRowExploder:
             if not os.path.exists(output_path.parents[0]):
                 os.makedirs(output_path.parents[0])
 
-            df.write_parquet(output_path)
+            df.write_csv(output_path)
 
     def __i_dont_have_consistent_typing_and_it_sucks(
         self, columns: list[str], df: pl.DataFrame
