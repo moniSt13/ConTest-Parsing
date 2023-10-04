@@ -12,6 +12,7 @@ from jaeger_prometheus_joining.transformationscripts.MetricsParser import Metric
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
 from jaeger_prometheus_joining.util.timedecorator import timer
 from jaeger_prometheus_joining.util.visualization.GraphGenerator import GraphGenerator
+from transformationscripts.TraceInOneRowExploder import TracesInOneRowExploder
 
 
 class JoinManager:
@@ -21,21 +22,14 @@ class JoinManager:
     def process(self):
         path_list = FilepathFinder(self.settings).find_files()
 
-        self.__print_statistics(path_list)
-        self.__clear_output()
-        self.__parse_metrics(path_list)
-        self.__parse_traces(path_list)
-        self.__join()
-        self.__feature_engineering()
-        self.__generate_graph()
-
-    @timer
-    def __clear_output(self):
-        if not self.settings.clear_output:
-            return
-
-        if self.settings.out.exists() and self.settings.out.is_dir():
-            shutil.rmtree(self.settings.out)
+        # self.__print_statistics(path_list)
+        # self.__clear_output()
+        # self.__parse_metrics(path_list)
+        # self.__parse_traces(path_list)
+        # self.__join()
+        # self.__feature_engineering()
+        # self.__generate_graph()
+        self.__explode_trace_into_one_line()
 
     @timer
     def __parse_metrics(self, path_list: dict):
@@ -118,9 +112,34 @@ class JoinManager:
             graph_generator.start(source_path, output_path)
 
     @timer
+    def __explode_trace_into_one_line(self):
+        exploder = TracesInOneRowExploder(self.settings)
+        for service in self.settings.out.iterdir():
+            if service.is_file():
+                continue
+
+            source_path = self.settings.out.joinpath(
+                service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
+            )
+
+            output_path = self.settings.out.joinpath(
+                service.name, f"{service.name}-{self.settings.final_name_suffix}-exploded.csv"
+            )
+
+            exploder.start(source_path, output_path)
+
+    @timer
     def __concat_files(self, output_path: Path, additional_name: str):
         file_concat = FileConcat(self.settings)
         file_concat.start(output_path, additional_name)
+
+    @timer
+    def __clear_output(self):
+        if not self.settings.clear_output:
+            return
+
+        if self.settings.out.exists() and self.settings.out.is_dir():
+            shutil.rmtree(self.settings.out)
 
     @timer
     def __print_statistics(self, path_list: dict):
