@@ -24,7 +24,7 @@ class JoinManager:
 
         self.__print_statistics(path_list)
         self.__clear_output()
-        self.__parse_metrics(path_list)
+        # self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
         self.__join()
         self.__feature_engineering()
@@ -128,7 +128,7 @@ class JoinManager:
 
             exploder.start(source_path, output_path)
 
-    @timer
+
     def __concat_files(self, output_path: Path, additional_name: str):
         file_concat = FileConcat(self.settings)
         file_concat.start(output_path, additional_name)

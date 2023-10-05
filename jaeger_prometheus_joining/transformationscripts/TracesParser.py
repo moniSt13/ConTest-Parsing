@@ -24,7 +24,7 @@ class TracesParser:
 
     def __load_data(self, filepath: Path):
         pandas_df = pd.read_json(filepath)
-        pandas_df.drop(["total", "limit", "offset", "errors"], inplace=True, axis=1)
+        pandas_df.drop(["total", "limit", "offset", "errors"], inplace=True, axis=1, errors="ignore")
         pandas_df = pd.json_normalize(pandas_df["data"], "spans", ["processes"])
 
         if len(pandas_df) == 0:
@@ -57,6 +57,8 @@ class TracesParser:
                     }
 
         df = pl.from_pandas(pandas_df)
+        print(df.schema)
+
         df = df.drop("processes", "logs")
         return df, process_lookup
 

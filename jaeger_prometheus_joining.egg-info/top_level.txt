@@ -1,2 +1,0 @@
-jaeger_prometheus_joining
-tests

@@ -1,6 +1,0 @@
-Metadata-Version: 2.1
-Name: jaeger-prometheus-joining
-Version: 0.1.0
-Summary: Join Jaeger-Traces and Prometheus-Metrics
-Author: Me
-License: MIT
