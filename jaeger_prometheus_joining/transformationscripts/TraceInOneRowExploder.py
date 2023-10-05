@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import polars as pl
-from polars import col
+from polars import col, Int64
 
 from controlflow.ParseSettings import ParseSettings
 
@@ -23,6 +23,8 @@ class TracesInOneRowExploder:
         finished_one_line_traces = []
         grouped_by_trace = df.group_by("traceID")
         for trace_id, trace_df in grouped_by_trace:  # type: str, pl.DataFrame
+            trace_duration = trace_df.select(col("duration").sum()).item()
+
             dfs_per_span = []
             dfs_per_span_same_column_name = list(
                 map(lambda x: pl.DataFrame(x), trace_df.iter_rows(named=True))
@@ -39,8 +41,9 @@ class TracesInOneRowExploder:
 
                 dfs_per_span.append(rename)
 
-            # [print(dft.schema) for dft in dfs_per_span]
-            exploded_trace = pl.concat(dfs_per_span, how="horizontal")
+            exploded_trace = pl.concat(dfs_per_span, how="horizontal").with_columns(
+                [pl.lit(trace_duration, Int64).alias("trace_duration")]
+            )
             finished_one_line_traces.append(exploded_trace)
         return finished_one_line_traces
 
