@@ -59,8 +59,8 @@ class TracesInOneRowExploder:
     ) -> pl.DataFrame:
         df = df.with_columns(
             [
-                col("childSpanId").cast(pl.Utf8).alias("childSpanId"),
-                col("childTraceId").cast(pl.Utf8).alias("childTraceId"),
+                col("childSpanID").cast(pl.Utf8),
+                col("childTraceID").cast(pl.Utf8),
             ]
         )
 
