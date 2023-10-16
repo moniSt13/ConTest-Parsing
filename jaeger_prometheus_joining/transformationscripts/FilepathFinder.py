@@ -1,9 +1,11 @@
+"""This class scans the input folder and looks for fitting data. There are no strict checks! It only looks for folder
+structure. Having runtime errors will be common!"""
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
 class FilepathFinder:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def find_files(self):
         path_list = {}

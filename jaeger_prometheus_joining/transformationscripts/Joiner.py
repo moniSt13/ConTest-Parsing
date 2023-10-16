@@ -1,3 +1,6 @@
+"""This class is responsible for joining the traces and metrics based on timestamp and podname. The result is one
+large csv-file."""
+
 from pathlib import Path
 
 import polars as pl
@@ -7,16 +10,32 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class Joiner:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(
         self, tracing_filepath: Path, metrics_filepaths: list[Path], output_path: Path
     ):
+        """
+        :param tracing_filepath: Filepath for the traces
+        :param metrics_filepaths: Folderpath for all of the found metrics
+        :param output_path: Outputpath where the merged file will be saved
+        :return: nothing
+        """
         df_tracing, df_metrics = self.__load_data(tracing_filepath, metrics_filepaths)
         df_joined = self.__join_data(df_tracing, df_metrics)
         self.__write_to_disk(df_joined, output_path)
 
     def __load_data(self, tracing_filepath: Path, metrics_filepaths: list[Path]):
+        """
+        We load our concatenated trace-file and every metric we could parsed. We sort them based on the timestamp and
+        filter out duplicate spanIDs (this should be done with the settings.drop_null variable and not a hardcoded
+        default! wip). Sorting helps with joining the data more efficiently. The different metrics are sorted by
+        their height, because depending on join-technique this can have impact on the resulting data size we receive.
+        We cannot guarantee that we have a result for every span!
+        :param tracing_filepath:
+        :param metrics_filepaths:
+        :return:
+        """
         tracing = (
             pl.read_parquet(tracing_filepath)
             .sort("starttime")
@@ -35,6 +54,17 @@ class Joiner:
         return tracing, all_metrics
 
     def __join_data(self, tracing: pl.DataFrame, all_metrics: list[pl.DataFrame]):
+        """
+        We join data with a left join, where the left table are the traces. Keys are podname and timestamp. We have
+        to drop duplicate columns, which were joined because of additional information in the parsed metrics (could
+        be improved for performance gains).
+
+        Several strategies were tested: Left join, inner join, outer join but this method has resulted in the most data
+        in a consistent matter.
+        :param tracing:
+        :param all_metrics:
+        :return:
+        """
         for metrics in all_metrics:
             joined = tracing.join(
                 metrics,

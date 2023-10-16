@@ -9,7 +9,7 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class GraphGenerator:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
         self.__drop_all()

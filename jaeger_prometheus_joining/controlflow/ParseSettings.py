@@ -53,19 +53,22 @@ class ParseSettings:
         can provide even more settings. The code for this functionality lies in another package (by the same author)"""
 
     @property
-    def source(self):
+    def source(self) -> Path:
+        """Source path to the root of your data."""
         return self._source
 
     @source.setter
-    def source(self, new_source):
+    def source(self, new_source: str):
         self._source = Path(new_source)
 
     @property
-    def out(self):
+    def out(self) -> Path:
+        """Output path of your data. The program saves states inbetween transformation steps. This folder should be
+        empty, because it will be cleaned!"""
         return self._out
 
     @out.setter
-    def out(self, new_out):
+    def out(self, new_out: str):
         self._out = Path(new_out)
 
     def __str__(self):

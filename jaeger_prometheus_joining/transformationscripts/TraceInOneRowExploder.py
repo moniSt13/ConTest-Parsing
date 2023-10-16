@@ -12,7 +12,7 @@ from jaeger_prometheus_joining.util.combinatorics import get_all_combinations
 
 class TracesInOneRowExploder:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
         df = pl.read_csv(source_path)

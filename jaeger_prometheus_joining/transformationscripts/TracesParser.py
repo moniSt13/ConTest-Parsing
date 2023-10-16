@@ -1,3 +1,5 @@
+"""Parses raw json-traces file. Can only parse a singular file and has no bulk option. After all traces have been
+parsed the `FileConcat` will concatenate them together."""
 import json
 import os
 from pathlib import Path
@@ -10,9 +12,14 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class TracesParser:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
+        """
+        :param source_path: Filepath to the raw metric-traces-file
+        :param output_path: Filepath for the parsed file.
+        :return: nothing
+        """
         df, process_lookup = self.__load_data(source_path)
         df = self.__transform_data(df, process_lookup)
         self.__write_to_disk(df, output_path)

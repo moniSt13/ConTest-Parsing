@@ -1,3 +1,6 @@
+"""
+Parses raw json-metric file. Can only parse a singular file and has no bulk option.
+"""
 import json
 import os
 from pathlib import Path
@@ -11,9 +14,14 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class MetricsParser:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
+        """
+        :param source_path: Filepath to the raw metric-json-file
+        :param output_path: Filepath for the parsed file.
+        :return: nothing
+        """
         df = self.__load_data(source_path)
         df, rename_name = self.__transform_data(df)
         df = self.__filter_data(df, rename_name)
