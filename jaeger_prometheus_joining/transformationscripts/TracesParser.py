@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import polars as pl
-from polars import col, Datetime, List, Struct, Field, Utf8, Int64
+from polars import col, when, Datetime, List, Struct, Field, Utf8, Int64, lit
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -99,11 +99,24 @@ class TracesParser:
             .unnest("spans")
             .explode("tags")
             .unnest("tags")
-            .filter(
-                (col("key") == "http.status_code") | (col("key") == "otel.status_code")
+            .with_columns(
+                [
+                    when(
+                        (col("key") == "http.status_code")
+                        | (col("key") == "otel.status_code")
+                    )
+                    .then(col("value").cast(Utf8))
+                    .otherwise(lit(None))
+                    .alias('http.status_code')
+                ]
             )
-            .drop("key")
-            .rename({"value": "http.status_code"})
+            .drop(['key', 'value'])
+
+            # .filter(
+            #     (col("key") == "http.status_code") | (col("key") == "otel.status_code")
+            # )
+            # .drop("key")
+            # .rename({"value": "http.status_code"})
             .explode("references")
             .with_columns(
                 [
