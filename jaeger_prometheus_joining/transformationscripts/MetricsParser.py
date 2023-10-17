@@ -36,6 +36,7 @@ class MetricsParser:
         with open(filepath) as json_src_file:
             rawdata = json.load(json_src_file)
 
+        # because there is no inconsistent typing we can infer the schema
         rawdata = rawdata["data"]["result"]
         df = pd.DataFrame(rawdata)
 
@@ -48,6 +49,7 @@ class MetricsParser:
         return pl.DataFrame(df)
 
     def __transform_data(self, df: pl.DataFrame):
+        # we don't have every necessary column in every metric so we define standards to be able to vstack them
         df = df.unnest("metric")
 
         necessary_columns = [
@@ -64,6 +66,8 @@ class MetricsParser:
             if i not in df.columns:
                 df = df.with_columns([pl.lit(None, dtype=pl.Utf8).alias(i)])
 
+        # we have to pivot the name of the metric and move it from the rows to a column, we would not be able to
+        # efficiently vstack and join the data otherwise
         rename_name = df.head(1).to_dicts().pop()["__name__"]
 
         df = (

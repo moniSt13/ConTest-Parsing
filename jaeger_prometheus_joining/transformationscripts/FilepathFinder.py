@@ -21,8 +21,10 @@ class FilepathFinder:
                     continue
 
                 folder_name = category.name.lower()
+                # we may only process json files
                 files = [x for x in category.glob("*.json") if x.stat().st_size > 100]
 
+                # we may look for source data in a folder called monitor../trace../ts...
                 if folder_name.startswith("monitor"):
                     path_list[service.name]["monitoring"].extend(files)
 
@@ -36,9 +38,6 @@ class FilepathFinder:
                 del path_list[service.name]
 
         if self.settings.test_mode:
-            # temp_list = {}
-            # temp_list['ts-admin-basic-info-service-sprintstarterweb_1.5.22'] = path_list['ts-admin-basic-info-service-sprintstarterweb_1.5.22']
-            # path_list = temp_list
             while len(path_list.keys()) > 2:
                 path_list.popitem()
 

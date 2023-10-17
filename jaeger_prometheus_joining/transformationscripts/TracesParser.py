@@ -48,6 +48,7 @@ class TracesParser:
                         "podname": pod_name,
                     }
 
+        # schema definition takes care 90% of parsing
         schema = {
             "data": List(
                 Struct(
@@ -99,6 +100,8 @@ class TracesParser:
         return df, process_lookup
 
     def __transform_data(self, df: pl.DataFrame, process_lookup: dict):
+        # we parsed nested json fields as polars-structs and explode them here
+        # furthermore we parse ONLY the http statuscode and ignore the rest, not used fields are dropped
         df = (
             df.explode("data")
             .unnest("data")
@@ -118,12 +121,6 @@ class TracesParser:
                 ]
             )
             .drop(['key', 'value'])
-
-            # .filter(
-            #     (col("key") == "http.status_code") | (col("key") == "otel.status_code")
-            # )
-            # .drop("key")
-            # .rename({"value": "http.status_code"})
             .explode("references")
             .with_columns(
                 [
@@ -135,6 +132,7 @@ class TracesParser:
             .unnest("references")
         )
 
+        # map the processID to our lookup table and round the timestamp
         df = (
             df.with_columns(col("processID").map_dict(process_lookup))
             .unnest("processID")

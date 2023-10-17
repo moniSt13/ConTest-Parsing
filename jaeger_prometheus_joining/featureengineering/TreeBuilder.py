@@ -1,3 +1,8 @@
+"""
+ It adds fields for the min/mean/max-depth of traces. To achieve this we parse every trace in a tree structure.
+ This functionality provides the package `contest-tree` which is not in this repository.
+"""
+
 import os
 from pathlib import Path
 
