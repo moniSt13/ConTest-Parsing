@@ -1,3 +1,8 @@
+"""
+ It adds fields for the min/mean/max-depth of traces. To achieve this we parse every trace in a tree structure.
+ This functionality provides the package `contest-tree` which is not in this repository.
+"""
+
 import os
 from pathlib import Path
 
@@ -11,7 +16,7 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class TreeBuilder:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path):
         # schema = {"traceID": Utf8, "spanID": Utf8, "childTraceID":Utf8, "childSpanID":Utf8}

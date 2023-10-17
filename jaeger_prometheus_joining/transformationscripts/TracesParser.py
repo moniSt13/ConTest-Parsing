@@ -1,3 +1,5 @@
+"""Parses raw json-traces file. Can only parse a singular file and has no bulk option. After all traces have been
+parsed the `FileConcat` will concatenate them together."""
 import json
 import os
 from pathlib import Path
@@ -10,9 +12,14 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class TracesParser:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
+        """
+        :param source_path: Filepath to the raw metric-traces-file
+        :param output_path: Filepath for the parsed file.
+        :return: nothing
+        """
         df, process_lookup = self.__load_data(source_path)
         df = self.__transform_data(df, process_lookup)
         self.__write_to_disk(df, output_path)
@@ -41,6 +48,7 @@ class TracesParser:
                         "podname": pod_name,
                     }
 
+        # schema definition takes care 90% of parsing
         schema = {
             "data": List(
                 Struct(
@@ -92,6 +100,8 @@ class TracesParser:
         return df, process_lookup
 
     def __transform_data(self, df: pl.DataFrame, process_lookup: dict):
+        # we parsed nested json fields as polars-structs and explode them here
+        # furthermore we parse ONLY the http statuscode and ignore the rest, not used fields are dropped
         df = (
             df.explode("data")
             .unnest("data")
@@ -111,12 +121,6 @@ class TracesParser:
                 ]
             )
             .drop(['key', 'value'])
-
-            # .filter(
-            #     (col("key") == "http.status_code") | (col("key") == "otel.status_code")
-            # )
-            # .drop("key")
-            # .rename({"value": "http.status_code"})
             .explode("references")
             .with_columns(
                 [
@@ -128,6 +132,7 @@ class TracesParser:
             .unnest("references")
         )
 
+        # map the processID to our lookup table and round the timestamp
         df = (
             df.with_columns(col("processID").map_dict(process_lookup))
             .unnest("processID")

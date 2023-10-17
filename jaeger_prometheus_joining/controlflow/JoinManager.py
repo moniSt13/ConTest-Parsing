@@ -1,3 +1,8 @@
+"""
+This is the class, which controls the 'parsing-flow'. You can change the order, in which the program transforms the data.
+Take a look at the `process`-method!
+"""
+
 import shutil
 from pathlib import Path
 
@@ -9,17 +14,34 @@ from jaeger_prometheus_joining.transformationscripts.FilepathFinder import (
 )
 from jaeger_prometheus_joining.transformationscripts.Joiner import Joiner
 from jaeger_prometheus_joining.transformationscripts.MetricsParser import MetricsParser
+from jaeger_prometheus_joining.transformationscripts.TraceInOneRowExploder import (
+    TracesInOneRowExploder,
+)
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
 from jaeger_prometheus_joining.util.timedecorator import timer
 from jaeger_prometheus_joining.util.visualization.GraphGenerator import GraphGenerator
-from transformationscripts.TraceInOneRowExploder import TracesInOneRowExploder
 
 
 class JoinManager:
     def __init__(self):
-        self.settings = ParseSettings()
+        self.settings: ParseSettings = ParseSettings()
+        """Seemingly the most important class member. You can define every setting, which effects the whole program. 
+        Take a look at the `ParseSettings` documentation for further help."""
 
     def process(self):
+        """
+        This method defines the core logic. The default sequence looks like this:
+        * scanning your input_folder for parseable files
+        * printin statistics (folder size, found services, settings)
+        * clears output folder
+        * parsing metrics
+        * parsing traces and concatenating them
+        * joining metrics and traces
+        * feature-engineer the new data to gain even more value (min/mean/max trace depth, etc.)
+        * generate graphs of your data (html rendered graphs with neo4j and vis.js)
+        * imploding the data trace-wise (to fit to a specific model)
+        :return:
+        """
         path_list = FilepathFinder(self.settings).find_files()
 
         self.__print_statistics(path_list)
@@ -123,11 +145,11 @@ class JoinManager:
             )
 
             output_path = self.settings.out.joinpath(
-                service.name, f"{service.name}-{self.settings.final_name_suffix}-exploded.csv"
+                service.name,
+                f"{service.name}-{self.settings.final_name_suffix}-exploded.csv",
             )
 
             exploder.start(source_path, output_path)
-
 
     def __concat_files(self, output_path: Path, additional_name: str):
         file_concat = FileConcat(self.settings)

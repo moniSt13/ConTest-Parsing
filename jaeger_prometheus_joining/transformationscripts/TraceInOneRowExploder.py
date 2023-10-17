@@ -1,3 +1,30 @@
+"""
+WIP
+
+This isn't working and should be in feature engineering. This has really high resource consumption and multiprocessing
+didn't help.
+
+Implodes a trace into one line. Every spans is appended to the one-line-trace. The effect is that the row-count
+decreases dramatically and the column count increases. Column counts can go over 1000 and is not static.
+
+It may look like this:
+
+
+| 0-traceID | 0-spanID | 0-microservice | 1-traceID | 1-spanID | 1-microservice | 2-traceID | 2-spanID | 2-microservice | 3-traceID | 3-spanID | 3-microservice |
+|-----------|----------|----------------|-----------|----------|----------------|-----------|----------|----------------|-----------|----------|----------------|
+| 1         | 1        | ts-admin       | 1         | 2        | ts-seat        | 1         | 3        | ts-admin       | 1         | 4        | ts-security    |
+|           |          |                |           |          |                |           |          |                |           |          |                |
+
+zu
+
+| 0-traceID | 0-spanID | ts-admin | 1-traceID | 1-spanID | ts-seat | 2-traceID | 2-spanID | ts-security | 3-traceID | 3-spanID | ts-another |
+|-----------|----------|----------|-----------|----------|---------|-----------|----------|-------------|-----------|----------|------------|
+| 1         | 1        | true     | 1         | 2        | true    | 1         | 4        | true        | -         | -        | -          |
+| 1         | 3        | true     | 1         | 2        | true    | 1         | 4        | true        | -         | -        | -          |
+
+
+"""
+
 import multiprocessing
 import os
 import queue
@@ -12,7 +39,7 @@ from jaeger_prometheus_joining.util.combinatorics import get_all_combinations
 
 class TracesInOneRowExploder:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
         df = pl.read_csv(source_path)
