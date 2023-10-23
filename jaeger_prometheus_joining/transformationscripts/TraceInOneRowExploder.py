@@ -50,25 +50,48 @@ class TracesInOneRowExploder:
 
         for trace_id, trace_df in grouped_by_trace:  # type: str, pl.DataFrame
             trace_duration = trace_df.select(col("duration").sum()).item()
+            trace_span_length = trace_df.height
             # pseudo code: all metrics - fix values --> then aggregate
+
+            if "container_cpu_usage_seconds_total" not in trace_df.columns:
+                trace_df = trace_df.with_columns(pl.lit(None, pl.Int64).alias("container_cpu_usage_seconds_total"))
+            if "container_memory_working_set_bytes" not in trace_df.columns:
+                trace_df = trace_df.with_columns(pl.lit(None, pl.Int64).alias("container_memory_working_set_bytes"))
+
+
 
             aggregated_df = trace_df.group_by(col("servicename")).agg(
                 col("max_depth").mean().alias("mean_max_depth"),
                 col("min_depth").mean().alias("mean_min_depth"),
                 col("mean_depth").mean().alias("mean_mean_depth"),
                 col("self_depth").mean().alias("mean_self_depth"),
-                col("spanID", "operationName"),
+                col("spanID", "operationName", "starttime"),
+                pl.count().alias("spans_in_microservice"),
+                col("container_cpu_usage_seconds_total").mean().alias("mean_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes").mean().alias("mean_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total").max().alias("max_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes").max().alias("max_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total").min().alias("min_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes").min().alias("min_container_memory_working_set_bytes"),
+                col("duration").mean().alias("mean_duration"),
+                col("duration").min().alias("min_duration"),
+                col("duration").max().alias("max_duration"),
+
+
             )
+            # container_cpu_usage_seconds_total
+            # container_memory_working_set_bytes
 
             one_row_traces = []
             for single_service_json in aggregated_df.iter_rows(named=True):
                 single_service_json["spanID"] = [single_service_json["spanID"]]
+                single_service_json["starttime"] = [single_service_json["starttime"]]
                 single_service_json["operationName"] = [
                     single_service_json["operationName"]
                 ]
                 servicename = single_service_json["servicename"]
                 single_service_json.pop("servicename")
-                print(single_service_json)
+                # print(single_service_json)
                 single_service_df = (
                     pl.DataFrame(
                         single_service_json,
@@ -77,6 +100,7 @@ class TracesInOneRowExploder:
                     [
                         pl.col("spanID").list.join("; "),
                         pl.col("operationName").list.join("; "),
+                        pl.col("starttime").list.join("; "),
                     ]
                 )
 
@@ -94,7 +118,12 @@ class TracesInOneRowExploder:
                 # print(single_service_df)
                 one_row_traces.append(single_service_df)
 
-            one_trace_df = pl.concat(one_row_traces, how="horizontal").with_columns([pl.lit(trace_id, pl.Utf8).alias("traceID")])
+            one_trace_df = pl.concat(one_row_traces, how="horizontal").with_columns(
+                [
+                    pl.lit(trace_id, pl.Utf8).alias("traceID"),
+                    pl.lit(trace_span_length, pl.Int64).alias("traceLength"),
+                ]
+            )
 
             all_one_line_traces.append(one_trace_df)
 
