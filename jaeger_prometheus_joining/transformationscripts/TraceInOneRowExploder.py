@@ -25,16 +25,13 @@ zu
 
 """
 
-import multiprocessing
 import os
-import queue
 from pathlib import Path
 
 import polars as pl
-from polars import col, Int64
+from polars import col
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
-from jaeger_prometheus_joining.util.combinatorics import get_all_combinations
 
 
 class TracesInOneRowExploder:
@@ -48,105 +45,92 @@ class TracesInOneRowExploder:
         self.__write_to_disk(final_df, output_path)
 
     def __split_trace_into_one_row(self, df: pl.DataFrame) -> list[pl.DataFrame]:
-        column_names = df.columns
-
-        # jobs = []
-        finished_one_line_traces = []
+        all_one_line_traces = []
         grouped_by_trace = df.group_by("traceID")
-        #
-        # queue = multiprocessing.get_context("spawn").Queue()
-        # queue.put(finished_one_line_traces)
 
         for trace_id, trace_df in grouped_by_trace:  # type: str, pl.DataFrame
-            # print(trace_df.height)
             trace_duration = trace_df.select(col("duration").sum()).item()
+            trace_span_length = trace_df.height
+            # pseudo code: all metrics - fix values --> then aggregate
 
-            rows = list(trace_df.iter_rows(named=True))
-            possible_row_combinations = get_all_combinations(rows, "servicename")
-        #
-            dfs_per_span = []
+            if "container_cpu_usage_seconds_total" not in trace_df.columns:
+                trace_df = trace_df.with_columns(pl.lit(None, pl.Int64).alias("container_cpu_usage_seconds_total"))
+            if "container_memory_working_set_bytes" not in trace_df.columns:
+                trace_df = trace_df.with_columns(pl.lit(None, pl.Int64).alias("container_memory_working_set_bytes"))
 
-            for row in possible_row_combinations:
-                dfs_per_combination = []
-                for span in row: #type: dict
-                    span[span['servicename']] = True
-                    temp_df = (pl.DataFrame(span))
 
-                    temp_df = self.__i_dont_have_consistent_typing_and_it_sucks(temp_df.columns, temp_df)
-                    temp_df = temp_df.rename(
-                        self.__columns_with_prefix(list(span.keys()), span['servicename'])
+
+            aggregated_df = trace_df.group_by(col("servicename")).agg(
+                col("max_depth").mean().alias("mean_max_depth"),
+                col("min_depth").mean().alias("mean_min_depth"),
+                col("mean_depth").mean().alias("mean_mean_depth"),
+                col("self_depth").mean().alias("mean_self_depth"),
+                col("spanID", "operationName", "starttime"),
+                pl.count().alias("spans_in_microservice"),
+                col("container_cpu_usage_seconds_total").mean().alias("mean_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes").mean().alias("mean_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total").max().alias("max_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes").max().alias("max_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total").min().alias("min_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes").min().alias("min_container_memory_working_set_bytes"),
+                col("duration").mean().alias("mean_duration"),
+                col("duration").min().alias("min_duration"),
+                col("duration").max().alias("max_duration"),
+
+
+            )
+            # container_cpu_usage_seconds_total
+            # container_memory_working_set_bytes
+
+            one_row_traces = []
+            for single_service_json in aggregated_df.iter_rows(named=True):
+                single_service_json["spanID"] = [single_service_json["spanID"]]
+                single_service_json["starttime"] = [single_service_json["starttime"]]
+                single_service_json["operationName"] = [
+                    single_service_json["operationName"]
+                ]
+                servicename = single_service_json["servicename"]
+                single_service_json.pop("servicename")
+                # print(single_service_json)
+                single_service_df = (
+                    pl.DataFrame(
+                        single_service_json,
                     )
-                    dfs_per_combination.append(temp_df)
+                ).with_columns(
+                    [
+                        pl.col("spanID").list.join("; "),
+                        pl.col("operationName").list.join("; "),
+                        pl.col("starttime").list.join("; "),
+                    ]
+                )
 
-                dfs_per_span.append(pl.concat(dfs_per_combination, how='horizontal')
-                                    .with_columns([pl.lit(trace_duration, Int64).alias("trace_duration")]))
-            finished_one_line_traces.extend(dfs_per_span)
+                single_service_df = single_service_df.rename(
+                    self.__columns_with_prefix(
+                        list(single_service_json.keys()),
+                        servicename,
+                    )
+                )
+                # print(single_service_df)
 
-        #     proc = multiprocessing.get_context("spawn").Process(target=self.intense_computing, args=(queue, rows, trace_duration))
-        #     jobs.append(proc)
-        #     proc.start()
-        #
-        # for fin_proc in jobs:
-        #     fin_proc.join()
+                single_service_df = self.__i_dont_have_consistent_typing_and_it_sucks(
+                    single_service_df.columns, single_service_df
+                )
+                # print(single_service_df)
+                one_row_traces.append(single_service_df)
 
-        # finished_one_line_traces = queue.get()
-        print(len(finished_one_line_traces))
-            # finished_one_line_traces.extend(intense_computing(rows))
-        return finished_one_line_traces
-                # print(x.select(col('traceID','spanID', 'servicename')))
+            one_trace_df = pl.concat(one_row_traces, how="horizontal").with_columns(
+                [
+                    pl.lit(trace_id, pl.Utf8).alias("traceID"),
+                    pl.lit(trace_span_length, pl.Int64).alias("traceLength"),
+                ]
+            )
 
+            all_one_line_traces.append(one_trace_df)
 
-
-
-            # dfs_per_span_same_column_name = list(
-            #     map(lambda x: pl.DataFrame(x), trace_df.iter_rows(named=True))
-            # )
-            # for index, df_per_span in enumerate(
-            #     dfs_per_span_same_column_name
-            # ):  # type: int, pl.DataFrame
-            #     type_changed_df = self.__i_dont_have_consistent_typing_and_it_sucks(
-            #         column_names, df_per_span
-            #     )
-            #     rename = type_changed_df.rename(
-            #         self.__columns_with_prefix(column_names, str(index))
-            #     )
-            #
-            #     dfs_per_span.append(rename)
-
-            # exploded_trace = (pl.concat(dfs_per_span, how="horizontal")
-            #                     .with_columns([pl.lit(trace_duration, Int64).alias("trace_duration")]))
-            # finished_one_line_traces.append(exploded_trace)
-
-
-    # def intense_computing(self, queue, intense_rows, inner_trace_duration) -> list:
-    #
-    #     inner_finished_one_line_traces = queue.get(timeout=3)
-    #
-    #     possible_row_combinations = get_all_combinations(intense_rows, "servicename")
-    #
-    #     dfs_per_span = []
-    #
-    #     for row in possible_row_combinations:
-    #         dfs_per_combination = []
-    #         for span in row: #type: dict
-    #             span[span['servicename']] = True
-    #             temp_df = (pl.DataFrame(span))
-    #
-    #             temp_df = self.__i_dont_have_consistent_typing_and_it_sucks(temp_df.columns, temp_df)
-    #             temp_df = temp_df.rename(
-    #                 self.__columns_with_prefix(list(span.keys()), span['servicename'])
-    #             )
-    #             dfs_per_combination.append(temp_df)
-    #
-    #         dfs_per_span.append(pl.concat(dfs_per_combination, how='horizontal')
-    #                             .with_columns([pl.lit(inner_trace_duration, Int64).alias("trace_duration")]))
-    #     inner_finished_one_line_traces.extend(dfs_per_span)
-    #     queue.put(inner_finished_one_line_traces)
-
-
+        return all_one_line_traces
 
     def __combine_single_traces(self, dfs: list[pl.DataFrame]) -> pl.DataFrame:
-        if(len(dfs) > 0):
+        if len(dfs) > 0:
             return pl.concat(dfs, how="diagonal")
         else:
             raise Exception("combinatorics didnt work")
@@ -161,11 +145,15 @@ class TracesInOneRowExploder:
     def __i_dont_have_consistent_typing_and_it_sucks(
         self, columns: list[str], df: pl.DataFrame
     ) -> pl.DataFrame:
-        df = df.with_columns(
-            [
-                col("childSpanID").cast(pl.Utf8),
-                col("childTraceID").cast(pl.Utf8),
-            ]
+        df = self.typecast_column_if_exists(
+            df,
+            pl.Utf8,
+            "childSpanID",
+        )
+        df = self.typecast_column_if_exists(
+            df,
+            pl.Utf8,
+            "childTraceID",
         )
 
         df = self.typecast_column_if_exists(
