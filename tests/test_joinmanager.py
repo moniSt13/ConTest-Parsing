@@ -5,86 +5,32 @@ from itertools import combinations
 
 import jaeger_prometheus_joining.util.combinatorics
 from controlflow.JoinManager import JoinManager
+import polars as pl
 
 
+#
+with open(
+    "/home/michaelleitner/Documents/contest/Data_TrainTicket/ts-admin-basic-info-service-sprintstarterweb_1.5.22/LOGS_ts-admin-basic-info-service_springstarterweb_1.5.22.RELEASE.txt"
+) as logfile:
+    result_dict = {"timestamp": [], "origin": [], "error_message": []}
+    # line_cnt = 0
+    for line in logfile:
+        if line.startswith("\t") or line.isspace() or not line[0].isdigit() or line.find("---") == -1:
+            pass
+        else:
+            line_split_message_and_info = line.split(" : ")
 
+            error_message = line_split_message_and_info[-1].strip()
+            origin = line_split_message_and_info[0].split("] ")[1].strip()
+            timestamp = line_split_message_and_info[0].split("---")[0].split(" ")[1].strip()
 
-
-
-
-
-test = [
-    {"name": "ts-admin", "value": "bla1.0"},
-    {"name": "ts-admin", "value": "bla1.1"},
-    {"name": "ts-admin", "value": "bla1.2"},
-    {"name": "ts-seat", "value": "bla2.0"},
-    {"name": "ts-seat", "value": "bla2.1"},
-    {"name": "ts-seat", "value": "bla2.2"},
-    {"name": "ts-security", "value": "bla4.0"},
-    {"name": "ts-security", "value": "bla4.1"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another2", "value": "bla5"},
-    {"name": "ts-another3", "value": "bla5"},
-    {"name": "ts-another3", "value": "bla5"},
-    {"name": "ts-another3", "value": "bla5"},
-    {"name": "ts-another3", "value": "bla5"},
-    # {"name": "ts-another3", "value": "bla5"},
-    # {"name": "ts-another3", "value": "bla5"},
-    # {"name": "ts-another3", "value": "bla5"},
-    # {"name": "ts-another3", "value": "bla5"},
-    # {"name": "ts-another3", "value": "bla5"},
-    {"name": "ts-another5", "value": "bla5"},
-    {"name": "ts-another5", "value": "bla5"},
-    {"name": "ts-another5", "value": "bla5"},
-    {"name": "ts-another5", "value": "bla5"},
-    {"name": "ts-another5", "value": "bla5"},
-    # {"name": "ts-another5", "value": "bla5"},
-    # {"name": "ts-another5", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-    # {"name": "ts-another6", "value": "bla5"},
-]
-# now = time.perf_counter()
-# all_combinations = jaeger_prometheus_joining.util.combinatorics.get_all_combinations(test, "name")
-# print(time.perf_counter() - now)
-# print(len(all_combinations))
-# for x in all_combinations:
-#     print(x)
-
+            # print(f"{line_cnt}: {timestamp} | {origin} | {error_message}")
+            result_dict["timestamp"].append(timestamp)
+            result_dict["origin"].append(origin)
+            result_dict["error_message"].append(error_message)
+        # line_cnt+=1
+df = pl.DataFrame(result_dict)
+df.write_csv("testout.csv")
 
 def test_start():
     join_manager = JoinManager()
@@ -103,5 +49,7 @@ def test_start():
 
     join_manager.process()
 
-if __name__ == '__main__':
-    test_start()
+
+if __name__ == "__main__":
+    print()
+    # test_start()
