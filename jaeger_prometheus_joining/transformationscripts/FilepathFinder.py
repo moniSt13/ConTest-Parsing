@@ -14,11 +14,15 @@ class FilepathFinder:
             if not service.is_dir():
                 continue
 
-            path_list[service.name] = {"monitoring": [], "traces": []}
+            path_list[service.name] = {"monitoring": [], "traces": [], "logs": []}
 
             for category in service.iterdir():
                 if not category.is_dir():
-                    continue
+                    if (
+                        category.name.lower().startswith("logs")
+                        and category.suffix == ".txt"
+                    ):
+                        path_list[service.name]["logs"].append(category)
 
                 folder_name = category.name.lower()
                 # we may only process json files

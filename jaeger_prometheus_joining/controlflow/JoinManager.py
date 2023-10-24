@@ -20,6 +20,7 @@ from jaeger_prometheus_joining.transformationscripts.TraceInOneRowExploder impor
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
 from jaeger_prometheus_joining.util.timedecorator import timer
 from jaeger_prometheus_joining.util.visualization.GraphGenerator import GraphGenerator
+from jaeger_prometheus_joining.transformationscripts.LogsParser import LogsParser
 
 
 class JoinManager:
@@ -46,13 +47,25 @@ class JoinManager:
 
         # self.__print_statistics(path_list)
         # self.__clear_output()
+        self.__parse_logs(path_list)
         # self.__parse_metrics(path_list)
         # self.__parse_traces(path_list)
         # self.__join()
         # self.__feature_engineering()
         # self.__generate_graph()
-        self.__explode_trace_into_one_line()
+        # self.__explode_trace_into_one_line()
 
+    @timer
+    def __parse_logs(self, path_list: dict):
+        logs_parser = LogsParser(self.settings)
+        for service, sources in path_list.items():
+            for logs_file in sources["logs"]: #type: Path
+                filename = f"LOGS_{service}.parquet"
+                output_path = self.settings.out.joinpath(
+                    service, "logs", filename
+                )
+
+                logs_parser.start(logs_file, output_path)
     @timer
     def __parse_metrics(self, path_list: dict):
         metrics_parser = MetricsParser(self.settings)
