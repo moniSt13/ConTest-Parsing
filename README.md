@@ -39,6 +39,11 @@ main()
 * Implementierung minimal optimiert
 * Erkenntnisse blieben gleich!
 
+#### TODO
+
+* Traces zur selben Zeit mergen die Daten, so wenig leere Spalten wie möglich
+* 
+
 
 
 

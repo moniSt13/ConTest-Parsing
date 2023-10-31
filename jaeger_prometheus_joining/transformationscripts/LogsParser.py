@@ -29,6 +29,8 @@ class LogsParser:
                    minEventCount=minEventCount, merge_percent=merge_percent)
         parser.parse(log_file)
 
+
+    # DEPRECATED
     def __parse_data(self, source_path: Path) -> pl.DataFrame:
         with open(source_path) as logfile:
             result_dict = {
