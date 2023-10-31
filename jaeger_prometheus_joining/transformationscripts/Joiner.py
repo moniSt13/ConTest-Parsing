@@ -37,10 +37,7 @@ class Joiner:
         :return:
         """
         tracing = (
-            pl.read_parquet(tracing_filepath)
-            .sort("starttime")
-            .set_sorted("starttime")
-            .unique("spanID")
+            pl.read_parquet(tracing_filepath).sort("starttime").set_sorted("starttime")
         )
 
         all_metrics = []
@@ -66,11 +63,18 @@ class Joiner:
         :return:
         """
         for metrics in all_metrics:
-            joined = tracing.join(
+            # joined = tracing.join(
+            #     metrics,
+            #     left_on=["podname", "starttime"],
+            #     right_on=["pod", "measure_time"],
+            #     how="left",
+            # )
+            joined = tracing.join_asof(
                 metrics,
-                left_on=["podname", "starttime"],
-                right_on=["pod", "measure_time"],
-                how="left",
+                left_on="starttime",
+                right_on="measure_time",
+                by_left="podname",
+                by_right="pod",
             )
             joined = joined[:, [not (s.null_count() == joined.height) for s in joined]]
 
@@ -82,13 +86,13 @@ class Joiner:
                 if self.settings.output_vis:
                     print(f"Datasize from {cur_height} to {cur_height - joined.height}")
 
-            # Delete duplicate columns from right-table to prepare for next join
             duplicate_columns = [
                 col_name for col_name in tracing.columns if col_name.endswith("right")
             ]
             if len(duplicate_columns) > 0:
                 tracing = tracing.drop(duplicate_columns)
 
+        # Drops all data which couldn't be joined
         if "container" in tracing.columns:
             tracing = tracing.drop_nulls(subset="container")
 

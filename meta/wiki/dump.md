@@ -1,3 +1,17 @@
+# Fragen:
+
+* Was ist kube-rbac-proxy (The kube-rbac-proxy is a small HTTP proxy for a single upstream, that can perform RBAC authorization against the Kubernetes API)
+
+* ich bekomme prometheus metriken im 30 sekunden takt
+* 
+
+![img.png](network_transmit_packages_bild.png)
+
+---
+
+
+
+
 [//]: # ()
 [//]: # (## Metrics container drop matters?)
 

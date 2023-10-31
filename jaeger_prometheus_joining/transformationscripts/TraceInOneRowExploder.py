@@ -40,6 +40,7 @@ class TracesInOneRowExploder:
 
     def start(self, source_path: Path, output_path: Path):
         df = pl.read_csv(source_path)
+
         one_line_dfs = self.__split_trace_into_one_row(df)
         final_df = self.__combine_single_traces(one_line_dfs)
         self.__write_to_disk(final_df, output_path)
@@ -48,17 +49,21 @@ class TracesInOneRowExploder:
         all_one_line_traces = []
         grouped_by_trace = df.group_by("traceID")
 
+        # Split df into groups of their traces
         for trace_id, trace_df in grouped_by_trace:  # type: str, pl.DataFrame
+
+            # Calculate statistics and averages for one trace
             trace_duration = trace_df.select(col("duration").sum()).item()
             trace_span_length = trace_df.height
-            # pseudo code: all metrics - fix values --> then aggregate
 
             if "container_cpu_usage_seconds_total" not in trace_df.columns:
-                trace_df = trace_df.with_columns(pl.lit(None, pl.Int64).alias("container_cpu_usage_seconds_total"))
+                trace_df = trace_df.with_columns(
+                    pl.lit(None, pl.Int64).alias("container_cpu_usage_seconds_total")
+                )
             if "container_memory_working_set_bytes" not in trace_df.columns:
-                trace_df = trace_df.with_columns(pl.lit(None, pl.Int64).alias("container_memory_working_set_bytes"))
-
-
+                trace_df = trace_df.with_columns(
+                    pl.lit(None, pl.Int64).alias("container_memory_working_set_bytes")
+                )
 
             aggregated_df = trace_df.group_by(col("servicename")).agg(
                 col("max_depth").mean().alias("mean_max_depth"),
@@ -67,20 +72,28 @@ class TracesInOneRowExploder:
                 col("self_depth").mean().alias("mean_self_depth"),
                 col("spanID", "operationName", "starttime"),
                 pl.count().alias("spans_in_microservice"),
-                col("container_cpu_usage_seconds_total").mean().alias("mean_container_cpu_usage_seconds_total"),
-                col("container_memory_working_set_bytes").mean().alias("mean_container_memory_working_set_bytes"),
-                col("container_cpu_usage_seconds_total").max().alias("max_container_cpu_usage_seconds_total"),
-                col("container_memory_working_set_bytes").max().alias("max_container_memory_working_set_bytes"),
-                col("container_cpu_usage_seconds_total").min().alias("min_container_cpu_usage_seconds_total"),
-                col("container_memory_working_set_bytes").min().alias("min_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total")
+                .mean()
+                .alias("mean_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes")
+                .mean()
+                .alias("mean_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total")
+                .max()
+                .alias("max_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes")
+                .max()
+                .alias("max_container_memory_working_set_bytes"),
+                col("container_cpu_usage_seconds_total")
+                .min()
+                .alias("min_container_cpu_usage_seconds_total"),
+                col("container_memory_working_set_bytes")
+                .min()
+                .alias("min_container_memory_working_set_bytes"),
                 col("duration").mean().alias("mean_duration"),
                 col("duration").min().alias("min_duration"),
                 col("duration").max().alias("max_duration"),
-
-
             )
-            # container_cpu_usage_seconds_total
-            # container_memory_working_set_bytes
 
             one_row_traces = []
             for single_service_json in aggregated_df.iter_rows(named=True):
