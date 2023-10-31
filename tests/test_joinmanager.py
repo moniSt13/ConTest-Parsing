@@ -7,31 +7,6 @@ import jaeger_prometheus_joining.util.combinatorics
 from controlflow.JoinManager import JoinManager
 import polars as pl
 
-
-#
-with open(
-    "/home/michaelleitner/Documents/contest/Data_TrainTicket/ts-admin-basic-info-service-sprintstarterweb_1.5.22/LOGS_ts-admin-basic-info-service_springstarterweb_1.5.22.RELEASE.txt"
-) as logfile:
-    result_dict = {"timestamp": [], "origin": [], "error_message": []}
-    # line_cnt = 0
-    for line in logfile:
-        if line.startswith("\t") or line.isspace() or not line[0].isdigit() or line.find("---") == -1:
-            pass
-        else:
-            line_split_message_and_info = line.split(" : ")
-
-            error_message = line_split_message_and_info[-1].strip()
-            origin = line_split_message_and_info[0].split("] ")[1].strip()
-            timestamp = line_split_message_and_info[0].split("---")[0].split(" ")[1].strip()
-
-            # print(f"{line_cnt}: {timestamp} | {origin} | {error_message}")
-            result_dict["timestamp"].append(timestamp)
-            result_dict["origin"].append(origin)
-            result_dict["error_message"].append(error_message)
-        # line_cnt+=1
-df = pl.DataFrame(result_dict)
-df.write_csv("testout.csv")
-
 def test_start():
     join_manager = JoinManager()
     join_manager.settings.rounding_acc = "30m"
@@ -51,5 +26,4 @@ def test_start():
 
 
 if __name__ == "__main__":
-    print()
-    # test_start()
+    test_start()
