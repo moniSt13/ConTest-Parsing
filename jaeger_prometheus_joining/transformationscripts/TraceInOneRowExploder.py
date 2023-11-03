@@ -29,7 +29,8 @@ import os
 from pathlib import Path
 
 import polars as pl
-from polars import col
+import polars.selectors
+from polars import col, Float32, Utf8
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -41,28 +42,30 @@ class TracesInOneRowExploder:
     def start(self, source_path: Path, output_path: Path):
         df = pl.read_csv(source_path)
 
-        one_line_dfs = self.__split_trace_into_one_row(df)
-        final_df = self.__combine_single_traces(one_line_dfs)
+        one_line_dfs, microservice_lookup_df = self.__split_trace_into_one_row(df)
+        final_df = self.__combine_single_traces(one_line_dfs, microservice_lookup_df)
         self.__write_to_disk(final_df, output_path)
 
-    def __split_trace_into_one_row(self, df: pl.DataFrame) -> list[pl.DataFrame]:
+    def __split_trace_into_one_row(
+        self, df: pl.DataFrame
+    ) -> tuple[list[pl.DataFrame], pl.DataFrame]:
+        microservice_lookup = {}
         all_one_line_traces = []
         grouped_by_trace = df.group_by("traceID")
 
         # Split df into groups of their traces
         for trace_id, trace_df in grouped_by_trace:  # type: str, pl.DataFrame
-
             # Calculate statistics and averages for one trace
             trace_duration = trace_df.select(col("duration").sum()).item()
             trace_span_length = trace_df.height
 
             if "container_cpu_usage_seconds_total" not in trace_df.columns:
                 trace_df = trace_df.with_columns(
-                    pl.lit(None, pl.Int64).alias("container_cpu_usage_seconds_total")
+                    pl.lit(None, pl.Float32).alias("container_cpu_usage_seconds_total")
                 )
             if "container_memory_working_set_bytes" not in trace_df.columns:
                 trace_df = trace_df.with_columns(
-                    pl.lit(None, pl.Int64).alias("container_memory_working_set_bytes")
+                    pl.lit(None, pl.Float32).alias("container_memory_working_set_bytes")
                 )
 
             aggregated_df = trace_df.group_by(col("servicename")).agg(
@@ -117,18 +120,21 @@ class TracesInOneRowExploder:
                     ]
                 )
 
+                single_service_df = self.__i_dont_have_consistent_typing_and_it_sucks(
+                    single_service_df.columns, single_service_df
+                )
+
                 single_service_df = single_service_df.rename(
                     self.__columns_with_prefix(
                         list(single_service_json.keys()),
                         servicename,
                     )
                 )
-                # print(single_service_df)
 
-                single_service_df = self.__i_dont_have_consistent_typing_and_it_sucks(
-                    single_service_df.columns, single_service_df
+                self.__hash_serviceentry_and_add(
+                    single_service_df, servicename, microservice_lookup
                 )
-                # print(single_service_df)
+
                 one_row_traces.append(single_service_df)
 
             one_trace_df = pl.concat(one_row_traces, how="horizontal").with_columns(
@@ -140,13 +146,45 @@ class TracesInOneRowExploder:
 
             all_one_line_traces.append(one_trace_df)
 
-        return all_one_line_traces
+        if len(microservice_lookup.values()) == 0:
+            return all_one_line_traces, pl.DataFrame()
 
-    def __combine_single_traces(self, dfs: list[pl.DataFrame]) -> pl.DataFrame:
+        microservice_lookup_df = pl.concat(
+            list(microservice_lookup.values()), how="horizontal"
+        )
+
+        return all_one_line_traces, microservice_lookup_df
+
+    def __hash_serviceentry_and_add(
+        self, df: pl.DataFrame, servicename: str, microservice_lookup: dict
+    ):
+
+
+
+        df = df.with_columns(
+            [
+                pl.lit(None, Utf8).alias(servicename + "-spanID"),
+                pl.lit(None, Utf8).alias(servicename + "-starttime"),
+                pl.lit(None, Utf8).alias(servicename + "-operationName"),
+            ]
+        )
+        microservice_lookup[servicename] = df
+
+    def __combine_single_traces(
+        self, dfs: list[pl.DataFrame], microservice_lookup: pl.DataFrame
+    ) -> pl.DataFrame:
         if len(dfs) > 0:
-            return pl.concat(dfs, how="diagonal")
+            concat_df = pl.concat(dfs, how="diagonal")
+            concat_df_columns = concat_df.columns
+            concat_df_columns.remove("traceLength")
+            concat_df_columns.remove("traceID")
+            concat_df = concat_df.select(
+                col(name).fill_null(value=microservice_lookup.get_column(name))
+                for name in concat_df_columns
+            )
+            return concat_df
         else:
-            raise Exception("combinatorics didnt work")
+            return pl.DataFrame()
 
     def __write_to_disk(self, df: pl.DataFrame, output_path):
         if self.settings.save_to_disk:
@@ -171,25 +209,43 @@ class TracesInOneRowExploder:
 
         df = self.typecast_column_if_exists(
             df,
-            pl.Float64,
+            pl.Float32,
             "node_namespace_pod_container:container_memory_working_set_bytes",
         )
         df = self.typecast_column_if_exists(
             df, pl.Float32, "container_memory_mapped_file"
         )
         df = self.typecast_column_if_exists(
-            df, pl.Float64, "node_namespace_pod_container:container_memory_rss"
+            df, pl.Float32, "node_namespace_pod_container:container_memory_rss"
+        )
+        df = self.typecast_column_if_exists(
+            df, pl.Float32, "mean_container_memory_working_set_bytes"
+        )
+        df = self.typecast_column_if_exists(
+            df, pl.Float32, "mean_container_cpu_usage_seconds_total"
+        )
+        df = self.typecast_column_if_exists(
+            df, pl.Float32, "min_container_memory_working_set_bytes"
+        )
+        df = self.typecast_column_if_exists(
+            df, pl.Float32, "min_container_cpu_usage_seconds_total"
+        )
+        df = self.typecast_column_if_exists(
+            df, pl.Float32, "max_container_memory_working_set_bytes"
+        )
+        df = self.typecast_column_if_exists(
+            df, pl.Float32, "max_container_cpu_usage_seconds_total"
         )
         df = self.typecast_column_if_exists(
             df,
-            pl.Float64,
+            pl.Float32,
             "node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate",
         )
         df = self.typecast_column_if_exists(
-            df, pl.Float64, "node_namespace_pod_container:container_memory_cache"
+            df, pl.Float32, "node_namespace_pod_container:container_memory_cache"
         )
-        df = self.typecast_column_if_exists(df, pl.Float64, "prober_probe_total")
-        df = self.typecast_column_if_exists(df, pl.Float64, "kube_pod_status_ready")
+        df = self.typecast_column_if_exists(df, pl.Float32, "prober_probe_total")
+        df = self.typecast_column_if_exists(df, pl.Float32, "kube_pod_status_ready")
         df = self.typecast_column_if_exists(df, pl.Utf8, "http.status_code")
 
         return df
