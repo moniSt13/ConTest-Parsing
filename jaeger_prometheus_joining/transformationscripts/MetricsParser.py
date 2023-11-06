@@ -1,13 +1,11 @@
 """
 Parses raw json-metric file. Can only parse a singular file and has no bulk option.
 """
-import json
 import os
 from pathlib import Path
 
-import pandas as pd
 import polars as pl
-from polars import last, col
+from polars import last, col, Utf8, Struct, Field, List, Float64
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -33,29 +31,58 @@ class MetricsParser:
             print()
 
     def __load_data(self, filepath: Path):
-        with open(filepath) as json_src_file:
-            rawdata = json.load(json_src_file)
+        schema = {
+            "status": Utf8,
+            "data": Struct(
+                [
+                    Field("resultType", Utf8),
+                    Field(
+                        "result",
+                        List(
+                            Struct(
+                                [
+                                    Field(
+                                        "metric",
+                                        Struct(
+                                            [
+                                                Field("__name__", Utf8),
+                                                Field("container", Utf8),
+                                                Field("endpoint", Utf8),
+                                                Field("id", Utf8),
+                                                Field("image", Utf8),
+                                                Field("instance", Utf8),
+                                                Field("job", Utf8),
+                                                Field("metrics_path", Utf8),
+                                                Field("name", Utf8),
+                                                Field("namespace", Utf8),
+                                                Field("node", Utf8),
+                                                Field("pod", Utf8),
+                                                Field("service", Utf8),
+                                            ]
+                                        ),
+                                    ),
+                                    Field("values", List(List(Utf8))),
+                                ]
+                            )
+                        ),
+                    ),
+                ]
+            ),
+        }
 
-        # because there is no inconsistent typing we can infer the schema
-        df = pd.DataFrame(rawdata["data"]["result"])
-
-        # There is also vector
-        if rawdata["data"]["resultType"] != "matrix":
-            return
-
-        if len(df) == 0:
-            return
-
-        df["values"] = df["values"].apply(
-            lambda x: [[float(i[0] * 1_000_000), float(i[1])] for i in x]
-        )
-
-        return pl.DataFrame(df)
+        return pl.read_json(filepath, schema=schema)
 
     def __transform_data(self, df: pl.DataFrame):
         # we don't have every necessary column in every metric so we define standards to be able to vstack them
-        df = df.unnest("metric")
+        # df = df.unnest("metric")
 
+        df = (
+            df.unnest("data")
+            .explode("result")
+            .unnest("result")
+            .unnest("metric")
+            .explode("values")
+        )
         necessary_columns = [
             "__name__",
             "apiserver",
@@ -74,21 +101,30 @@ class MetricsParser:
         # efficiently vstack and join the data otherwise
         rename_name = df.head(1).to_dicts().pop()["__name__"]
 
-        df = (
-            df.select(necessary_columns)
-            .explode("values")
-            .with_columns(
-                [
-                    last()
-                    .list[0]
-                    .cast(pl.Datetime)
-                    .dt.round(self.settings.rounding_acc)
-                    .alias(f"measure_time"),
-                    last().list[1].alias(rename_name),
-                ]
-            )
-            .drop("__name__", "values")
-        )
+        df = df.with_columns(
+            [
+                pl.from_epoch(col("values").list[0].cast(Float64)).alias(
+                    "measure_time"
+                ),
+                col("values").list[1].cast(Float64).alias(rename_name),
+            ]
+        ).drop("values", "__name__")
+
+        # df = (
+        #     df.select(necessary_columns)
+        #     .explode("values")
+        #     .with_columns(
+        #         [
+        #             last()
+        #             .list[0]
+        #             .cast(pl.Datetime)
+        #             .dt.round(self.settings.rounding_acc)
+        #             .alias(f"measure_time"),
+        #             last().list[1].alias(rename_name),
+        #         ]
+        #     )
+        #     .drop("__name__", "values")
+        # )
 
         return df, rename_name
 

@@ -1,5 +1,7 @@
 """This class scans the input folder and looks for fitting data. There are no strict checks! It only looks for folder
 structure. Having runtime errors will be common!"""
+from pathlib import PosixPath, Path
+
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 
@@ -30,6 +32,7 @@ class FilepathFinder:
 
                 # we may look for source data in a folder called monitor../trace../ts...
                 if folder_name.startswith("monitor"):
+                    files = list(filter(lambda file: "container" in file.name, files))
                     path_list[service.name]["monitoring"].extend(files)
 
                 if folder_name.startswith("ts") or folder_name.startswith("trace"):
