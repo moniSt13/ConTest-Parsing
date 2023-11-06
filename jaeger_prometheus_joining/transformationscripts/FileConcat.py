@@ -19,5 +19,5 @@ class FileConcat:
         :param additional_name: Suffix, with which the resulting file will be saved.
         :return: nothing
         """
-        df = pl.read_parquet(f"{output_path}/*")
+        df = pl.read_parquet(f"{output_path}/*").unique(keep='none')
         df.write_parquet(f"{output_path}/{additional_name}merged-file.parquet")

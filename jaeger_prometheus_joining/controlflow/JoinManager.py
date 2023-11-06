@@ -47,7 +47,7 @@ class JoinManager:
 
         self.__print_statistics(path_list)
         self.__clear_output()
-        self.__parse_logs(path_list)
+        # self.__parse_logs(path_list)
         self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
         self.__join()
