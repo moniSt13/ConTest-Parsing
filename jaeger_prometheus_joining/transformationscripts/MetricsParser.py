@@ -37,15 +37,19 @@ class MetricsParser:
             rawdata = json.load(json_src_file)
 
         # because there is no inconsistent typing we can infer the schema
-        rawdata = rawdata["data"]["result"]
-        df = pd.DataFrame(rawdata)
+        df = pd.DataFrame(rawdata["data"]["result"])
+
+        # There is also vector
+        if rawdata["data"]["resultType"] != "matrix":
+            return
 
         if len(df) == 0:
             return
 
-        df["values"] = df["values"].transform(
+        df["values"] = df["values"].apply(
             lambda x: [[float(i[0] * 1_000_000), float(i[1])] for i in x]
         )
+
         return pl.DataFrame(df)
 
     def __transform_data(self, df: pl.DataFrame):

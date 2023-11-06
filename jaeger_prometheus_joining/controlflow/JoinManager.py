@@ -45,14 +45,14 @@ class JoinManager:
         """
         path_list = FilepathFinder(self.settings).find_files()
 
-        # self.__print_statistics(path_list)
-        # self.__clear_output()
+        self.__print_statistics(path_list)
+        self.__clear_output()
         # self.__parse_logs(path_list)
-        # self.__parse_metrics(path_list)
-        # self.__parse_traces(path_list)
-        # self.__join()
-        # self.__feature_engineering()
-        # self.__generate_graph()
+        self.__parse_metrics(path_list)
+        self.__parse_traces(path_list)
+        self.__join()
+        self.__feature_engineering()
+        self.__generate_graph()
         self.__explode_trace_into_one_line()
 
     @timer

@@ -16,6 +16,9 @@ def test_start():
     join_manager.settings.source = (
         "/home/michaelleitner/Documents/contest/Data_TrainTicket/"
     )
+    # join_manager.settings.source = (
+    #     "/home/michaelleitner/Documents/contest/Data_TrainTicket_Pirmin/"
+    # )
     join_manager.settings.output_vis = False
     join_manager.settings.tree_settings.print_data_with_accessing_field = True
     join_manager.settings.tree_settings.accessing_field = 1
