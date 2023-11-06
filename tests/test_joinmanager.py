@@ -1,11 +1,10 @@
-import time
-from collections import Counter
-from functools import reduce
-from itertools import combinations
+import json
 
-import jaeger_prometheus_joining.util.combinatorics
-from controlflow.JoinManager import JoinManager
 import polars as pl
+from polars import Struct, Field, Utf8, List, Float64, last, col, Float32
+
+from controlflow.JoinManager import JoinManager
+
 
 def test_start():
     join_manager = JoinManager()
