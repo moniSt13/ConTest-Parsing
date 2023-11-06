@@ -117,10 +117,10 @@ class TracesParser:
                     )
                     .then(col("value").cast(Utf8))
                     .otherwise(lit(None))
-                    .alias('http.status_code')
+                    .alias("http.status_code")
                 ]
             )
-            .drop(['key', 'value'])
+            .drop(["key", "value"])
             .explode("references")
             .with_columns(
                 [

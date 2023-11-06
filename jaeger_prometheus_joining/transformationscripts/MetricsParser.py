@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 import polars as pl
-from polars import last, col, Utf8, Struct, Field, List, Float64
+from polars import col, Utf8, Struct, Field, List, Float64
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -110,21 +110,6 @@ class MetricsParser:
             ]
         ).drop("values", "__name__")
 
-        # df = (
-        #     df.select(necessary_columns)
-        #     .explode("values")
-        #     .with_columns(
-        #         [
-        #             last()
-        #             .list[0]
-        #             .cast(pl.Datetime)
-        #             .dt.round(self.settings.rounding_acc)
-        #             .alias(f"measure_time"),
-        #             last().list[1].alias(rename_name),
-        #         ]
-        #     )
-        #     .drop("__name__", "values")
-        # )
 
         return df, rename_name
 

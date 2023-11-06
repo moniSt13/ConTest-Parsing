@@ -1,6 +1,5 @@
 """This class scans the input folder and looks for fitting data. There are no strict checks! It only looks for folder
 structure. Having runtime errors will be common!"""
-from pathlib import PosixPath, Path
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 

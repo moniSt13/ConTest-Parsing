@@ -29,8 +29,7 @@ import os
 from pathlib import Path
 
 import polars as pl
-import polars.selectors
-from polars import col, Float32, Utf8
+from polars import col, Utf8
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -158,9 +157,6 @@ class TracesInOneRowExploder:
     def __hash_serviceentry_and_add(
         self, df: pl.DataFrame, servicename: str, microservice_lookup: dict
     ):
-
-
-
         df = df.with_columns(
             [
                 pl.lit(None, Utf8).alias(servicename + "-spanID"),

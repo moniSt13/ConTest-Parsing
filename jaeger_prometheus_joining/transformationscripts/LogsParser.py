@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
+
 import polars as pl
 from logparser.AEL import LogParser
-
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -22,13 +22,17 @@ class LogsParser:
         log_file = source_path.name  # The input log file name
         # log_format = '<Date> <Time> <Level> --- <Origin>:<Content>'
         log_format = "<Date> <Time> <Level> <Number>---<LoggingReporter>: <Content>"
-        minEventCount = 2 # The minimum number of events in a bin
-        merge_percent = 0.5 # The percentage of different tokens
+        minEventCount = 2  # The minimum number of events in a bin
+        merge_percent = 0.5  # The percentage of different tokens
 
-        parser = LogParser(input_dir, output_dir, log_format,
-                   minEventCount=minEventCount, merge_percent=merge_percent)
+        parser = LogParser(
+            input_dir,
+            output_dir,
+            log_format,
+            minEventCount=minEventCount,
+            merge_percent=merge_percent,
+        )
         parser.parse(log_file)
-
 
     # DEPRECATED
     def __parse_data(self, source_path: Path) -> pl.DataFrame:
