@@ -15,7 +15,7 @@ from jaeger_prometheus_joining.transformationscripts.FilepathFinder import (
 from jaeger_prometheus_joining.transformationscripts.Joiner import Joiner
 from jaeger_prometheus_joining.transformationscripts.LogsParser import LogsParser
 from jaeger_prometheus_joining.transformationscripts.MetricsParser import MetricsParser
-from jaeger_prometheus_joining.transformationscripts.TraceInOneRowExploder import (
+from featureengineering.TraceInOneRowExploder import (
     TracesInOneRowExploder,
 )
 from jaeger_prometheus_joining.transformationscripts.TracesParser import TracesParser
@@ -51,9 +51,9 @@ class JoinManager:
         self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
         self.__join()
-        self.__feature_engineering()
-        self.__generate_graph()
+        self.__add_tree_statistics()
         self.__explode_trace_into_one_line()
+        self.__generate_graph()
 
     @timer
     def __parse_logs(self, path_list: dict):
@@ -110,7 +110,7 @@ class JoinManager:
             joiner.start(tracing_filepath, metrics_filepaths, output_path)
 
     @timer
-    def __feature_engineering(self):
+    def __add_tree_statistics(self):
         tree_builder = TreeBuilder(self.settings)
 
         for service in self.settings.out.iterdir():
