@@ -103,7 +103,7 @@ class MetricsParser:
 
         df = df.with_columns(
             [
-                pl.from_epoch(col("values").list[0].cast(Float64)).alias(
+                pl.from_epoch(col("values").list[0].cast(Float64)).dt.round(self.settings.rounding_acc).alias(
                     "measure_time"
                 ),
                 col("values").list[1].cast(Float64).alias(rename_name),

@@ -31,7 +31,8 @@ class FilepathFinder:
 
                 # we may look for source data in a folder called monitor../trace../ts...
                 if folder_name.startswith("monitor"):
-                    files = list(filter(lambda file: "container" in file.name, files))
+                    files = list(filter(lambda file: "node_cpu_seconds" or "container" in file.name, files))
+                    # files = list(filter(lambda file: "container" in file.name, files))
                     path_list[service.name]["monitoring"].extend(files)
 
                 if folder_name.startswith("ts") or folder_name.startswith("trace"):
