@@ -63,19 +63,22 @@ class Joiner:
         :return:
         """
         for metrics in all_metrics:
-            # joined = tracing.join(
-            #     metrics,
-            #     left_on=["podname", "starttime"],
-            #     right_on=["pod", "measure_time"],
-            #     how="left",
-            # )
-            joined = tracing.join_asof(
+            joined = tracing.join(
                 metrics,
-                left_on="starttime",
-                right_on="measure_time",
-                by_left="podname",
-                by_right="pod",
+                left_on=["podname", "starttime"],
+                right_on=["pod", "measure_time"],
+                how="left",
             )
+
+            # Resource hungry
+            # joined = tracing.join_asof(
+            #     metrics,
+            #     left_on="starttime",
+            #     right_on="measure_time",
+            #     by_left="podname",
+            #     by_right="pod",
+            # )
+            # print(joined.select(pl.last()))
             joined = joined[:, [not (s.null_count() == joined.height) for s in joined]]
 
             if joined.height > 0:

@@ -2,7 +2,7 @@
 
 #### Minimal
 
-* python 3.11
+* python 3.11 (3.12 doesnt work)
     * jupyter
     * pandas
     * polars

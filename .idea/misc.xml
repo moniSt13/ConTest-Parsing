@@ -3,7 +3,7 @@
     <option name="enabledOnReformat" value="true" />
     <option name="sdkName" value="Python 3.11 (ConTest-Library)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (ConTest-Library)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_21" project-jdk-name="Python 3.11 (ConTest-Library)" project-jdk-type="Python SDK" />
   <component name="ProjectType">
     <option name="id" value="jpab" />
   </component>

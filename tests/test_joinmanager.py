@@ -8,8 +8,8 @@ from controlflow.JoinManager import JoinManager
 
 def test_start():
     join_manager = JoinManager()
-    join_manager.settings.rounding_acc = "1ms"
-    join_manager.settings.drop_null = False
+    join_manager.settings.rounding_acc = "30m"
+    join_manager.settings.drop_null = True
     join_manager.settings.test_mode = False
     join_manager.settings.out = "../out"
     join_manager.settings.source = (
