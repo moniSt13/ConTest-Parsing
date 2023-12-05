@@ -13,6 +13,7 @@ class LogsParser:
 
     def start(self, source_path: Path, output_path: Path):
         self.__parameterize_logs(source_path, output_path)
+        self.__to_joinable_format(output_path)
         # df = self.__parse_data(source_path)
         # self.__write_to_disk(df, output_path)
 
@@ -34,45 +35,22 @@ class LogsParser:
         )
         parser.parse(log_file)
 
-    # DEPRECATED
-    def __parse_data(self, source_path: Path) -> pl.DataFrame:
-        with open(source_path) as logfile:
-            result_dict = {
-                "timestamp": [],
-                "origin": [],
-                "log_status": [],
-                "error_message": [],
-            }
-            for line in logfile:
-                if (
-                    line.startswith("\t")
-                    or line.isspace()
-                    or not line[0].isdigit()
-                    or line.find("---") == -1
-                ):
-                    pass
-                else:
-                    line_split_message_and_info = line.split(" : ")
+    def __to_joinable_format(self, output_path: Path):
+        for logfile in output_path.iterdir():
+            if 'structured' not in logfile.name:
+                continue
 
-                    error_message = line_split_message_and_info[-1].strip()
-                    origin = line_split_message_and_info[0].split("] ")[1].strip()
-                    timestamp = "T".join(
-                        line_split_message_and_info[0].split("---")[0].split(" ")[0:2]
-                    )
-                    log_status = (
-                        line_split_message_and_info[0]
-                        .split("---")[0]
-                        .strip()
-                        .split(" ")[-2]
-                        .strip()
-                    )
+            df = (pl.read_csv(logfile)
+                  .drop("Content", "EventTemplate", "ParameterList", "LineId", "Number")
+                  .with_columns([
+                        ("ts-" + pl.col("LoggingReporter").str.split("] ").list.get(1).str.split(".").list.get(0) + "-service").alias("source-servicename"),
+                        (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().dt.round(self.settings.rounding_acc).alias("timestamp"),
+                        (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().alias("original_timestamp")
+                  ])
+                  .drop("LoggingReporter", "Date", "Time"))
 
-                    result_dict["timestamp"].append(timestamp)
-                    result_dict["origin"].append(origin)
-                    result_dict["error_message"].append(error_message)
-                    result_dict["log_status"].append(log_status)
+            self.__write_to_disk(df, output_path.joinpath("LOGS_joinable.parquet"))
 
-        return pl.DataFrame(result_dict)
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
         if not os.path.exists(output_path.parents[0]):

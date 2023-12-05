@@ -47,7 +47,7 @@ class JoinManager:
 
         self.__print_statistics(path_list)
         self.__clear_output()
-        # self.__parse_logs(path_list)
+        self.__parse_logs(path_list)
         self.__parse_metrics(path_list)
         self.__parse_traces(path_list)
         self.__join()
@@ -60,8 +60,7 @@ class JoinManager:
         logs_parser = LogsParser(self.settings)
         for service, sources in path_list.items():
             for logs_file in sources["logs"]:  # type: Path
-                filename = f"LOGS_{service}.parquet"
-                output_path = self.settings.out.joinpath(service, "logs", filename)
+                output_path = self.settings.out.joinpath(service, "logs")
 
                 logs_parser.start(logs_file, output_path)
 
@@ -106,8 +105,9 @@ class JoinManager:
             )
             tracing_filepath = service.joinpath("traces", "traces-merged-file.parquet")
             metrics_filepaths = list(service.joinpath("monitoring").glob("*.parquet"))
+            logs_filepath = service.joinpath("logs", "LOGS_joinable.parquet")
 
-            joiner.start(tracing_filepath, metrics_filepaths, output_path)
+            joiner.start(tracing_filepath, metrics_filepaths, logs_filepath, output_path)
 
     @timer
     def __add_tree_statistics(self):
