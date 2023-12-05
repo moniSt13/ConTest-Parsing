@@ -4,6 +4,7 @@ large csv-file."""
 from pathlib import Path
 
 import polars as pl
+from polars import when, col, lit
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -13,7 +14,11 @@ class Joiner:
         self.settings: ParseSettings = settings
 
     def start(
-        self, tracing_filepath: Path, metrics_filepaths: list[Path], logs_filepath: Path, output_path: Path
+        self,
+        tracing_filepath: Path,
+        metrics_filepaths: list[Path],
+        logs_filepath: Path,
+        output_path: Path,
     ):
         """
         :param tracing_filepath: Filepath for the traces
@@ -21,12 +26,16 @@ class Joiner:
         :param output_path: Outputpath where the merged file will be saved
         :return: nothing
         """
-        df_tracing, df_logs, df_metrics = self.__load_data(tracing_filepath, logs_filepath, metrics_filepaths)
+        df_tracing, df_logs, df_metrics = self.__load_data(
+            tracing_filepath, logs_filepath, metrics_filepaths
+        )
         df_joined = self.__join_data(df_tracing, df_metrics)
         df_joined = self.__join_with_logs(df_joined, df_logs)
         self.__write_to_disk(df_joined, output_path)
 
-    def __load_data(self, tracing_filepath: Path, logs_filepath:Path, metrics_filepaths: list[Path]):
+    def __load_data(
+        self, tracing_filepath: Path, logs_filepath: Path, metrics_filepaths: list[Path]
+    ):
         """
         We load our concatenated trace-file and every metric we could parsed. We sort them based on the timestamp and
         filter out duplicate spanIDs (this should be done with the settings.drop_null variable and not a hardcoded
@@ -41,9 +50,7 @@ class Joiner:
             pl.read_parquet(tracing_filepath).sort("starttime").set_sorted("starttime")
         )
 
-        logs = (
-            pl.read_parquet(logs_filepath).sort("timestamp").set_sorted("timestamp")
-        )
+        logs = pl.read_parquet(logs_filepath).sort("timestamp").set_sorted("timestamp")
 
         all_metrics = []
         for metrics_filepath in metrics_filepaths:
@@ -106,17 +113,29 @@ class Joiner:
 
         return tracing
 
-    def __join_with_logs(self, df:pl.DataFrame, log_df: pl.DataFrame):
+    def __join_with_logs(self, df: pl.DataFrame, log_df: pl.DataFrame):
         joined_df = df.join(
             log_df,
             left_on=["servicename", "starttime"],
             right_on=["source-servicename", "timestamp"],
-            how="left")
+            how="left",
+        )
 
         # TODO count unique spanIDs (how many joins happened) and add count to row. drop duplicate spanId rows
-        n_logs_per_span = joined_df.select(pl.col("spanID").value_counts())
-        # TODO works as intended, already tested with output
+        n_logs_per_span = joined_df.select(pl.col("spanID").value_counts()).unnest(
+            "spanID"
+        )
         print(n_logs_per_span)
+
+        joined_df = (
+            joined_df.unique("spanID")
+            .join(n_logs_per_span, on="spanID")
+            .with_columns([when(col("EventId") == None).then(0).otherwise(col("counts")).alias("log-count")])
+            .drop("Level", "EventId", "original_timestamp", "counts")
+        )
+
+        # TODO works as intended, already tested with output
+        # print(n_logs_per_span)
 
         return joined_df
 
