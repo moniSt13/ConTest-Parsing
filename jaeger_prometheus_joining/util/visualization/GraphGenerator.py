@@ -9,7 +9,7 @@ from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
 class GraphGenerator:
     def __init__(self, settings: ParseSettings):
-        self.settings = settings
+        self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path):
         self.__drop_all()
@@ -17,6 +17,7 @@ class GraphGenerator:
         self.__generate_graph(output_path)
 
     def __drop_all(self):
+        # clearing our database to avoid dead data
         with GraphDatabase.driver(self.settings.neo4j_uri, auth=None) as driver:
             try:
                 driver.execute_query("MATCH p=()-->() DELETE p")
@@ -25,6 +26,8 @@ class GraphGenerator:
                 print(e)
 
     def __load_database(self, source_path: Path):
+        # we copy our final transformed data into the container and build up our graph
+        # these operations are handled by the graph processor of neo4j
         subprocess.call(
             f"docker cp '{source_path.absolute()}' {self.settings.neo4j_container_name}:/var/lib/neo4j/import",
             shell=True,
@@ -43,6 +46,7 @@ class GraphGenerator:
                 print(e)
 
     def __generate_graph(self, output_path: Path):
+        # we build the graph with the help of vis.js by injecting our nodes into a template
         with GraphDatabase.driver(self.settings.neo4j_uri, auth=None) as driver:
             graph = StyledGraph(driver, directed=True)
 
