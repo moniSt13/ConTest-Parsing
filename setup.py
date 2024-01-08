@@ -7,5 +7,5 @@ setup(
     description='Join Jaeger-Traces and Prometheus-Metrics',
     author='Me',
     license='MIT',
-    install_requires=['pandas', 'polars', 'pyarrow', 'neo4j', 'neo4jvis', 'ipython', 'logparser3', 'contest-tree-0.1.0-py3-none-any.whl']
+    install_requires=['pandas', 'polars', 'pyarrow', 'neo4j', 'neo4jvis', 'ipython', 'logparser3']
 )

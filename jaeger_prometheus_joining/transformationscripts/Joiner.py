@@ -21,6 +21,7 @@ class Joiner:
         output_path: Path,
     ):
         """
+        :param logs_filepath:
         :param tracing_filepath: Filepath for the traces
         :param metrics_filepaths: Folderpath for all of the found metrics
         :param output_path: Outputpath where the merged file will be saved
@@ -46,6 +47,7 @@ class Joiner:
         :param metrics_filepaths:
         :return:
         """
+
         tracing = (
             pl.read_parquet(tracing_filepath).sort("starttime").set_sorted("starttime")
         )
@@ -91,6 +93,7 @@ class Joiner:
             #     by_right="pod",
             # )
             # print(joined.select(pl.last()))
+
             joined = joined[:, [not (s.null_count() == joined.height) for s in joined]]
 
             if joined.height > 0:
@@ -125,7 +128,7 @@ class Joiner:
         n_logs_per_span = joined_df.select(pl.col("spanID").value_counts()).unnest(
             "spanID"
         )
-        print(n_logs_per_span)
+        # print(n_logs_per_span)
 
         joined_df = (
             joined_df.unique("spanID")
