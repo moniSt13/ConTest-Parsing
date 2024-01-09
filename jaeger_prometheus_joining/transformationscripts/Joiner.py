@@ -128,12 +128,11 @@ class Joiner:
         n_logs_per_span = joined_df.select(pl.col("spanID").value_counts()).unnest(
             "spanID"
         )
-        print(n_logs_per_span)
 
         joined_df = (
             joined_df.unique("spanID")
             .join(n_logs_per_span, on="spanID")
-            .with_columns([when(col("EventId") == None).then(0).otherwise(col("counts")).alias("log-count")])
+            .with_columns([when(col("EventId") == None).then(0).otherwise(col("count")).alias("log-count")])
             .drop("Level", "EventId", "original_timestamp", "counts")
         )
 
