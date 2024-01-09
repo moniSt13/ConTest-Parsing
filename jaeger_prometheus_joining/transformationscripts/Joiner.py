@@ -128,7 +128,7 @@ class Joiner:
         n_logs_per_span = joined_df.select(pl.col("spanID").value_counts()).unnest(
             "spanID"
         )
-        # print(n_logs_per_span)
+        print(n_logs_per_span)
 
         joined_df = (
             joined_df.unique("spanID")
