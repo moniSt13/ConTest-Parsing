@@ -56,6 +56,7 @@ class TreeBuilder:
         self, df: pl.DataFrame, trace_stats_df: pl.DataFrame
     ) -> pl.DataFrame:
         if df.height == 0 or trace_stats_df.height == 0:
+            print("Warning No tree statistics found, skipping join.")
             return df
         return df.join(trace_stats_df, on="spanID")
 
