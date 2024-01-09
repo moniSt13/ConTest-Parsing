@@ -35,7 +35,7 @@ class TreeBuilder:
                 cur_node.add_children([node])
                 __build_tree(node)
 
-        root_spans = df.filter(col("childSpanID") == None)
+        root_spans = df.filter(col("childSpanID").is_null())
         final_df_list = []
 
         for cur_root in root_spans.iter_rows():

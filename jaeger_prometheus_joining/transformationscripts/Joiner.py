@@ -132,7 +132,7 @@ class Joiner:
         joined_df = (
             joined_df.unique("spanID")
             .join(n_logs_per_span, on="spanID")
-            .with_columns([when(col("EventId") == None).then(0).otherwise(col("count")).alias("log-count")])
+            .with_columns([when(col("EventId").is_null()).then(0).otherwise(col("count")).alias("log-count")])
             .drop("Level", "EventId", "original_timestamp", "counts")
         )
 
