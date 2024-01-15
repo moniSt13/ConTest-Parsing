@@ -1,50 +1,61 @@
-# ConTest - Parsing - Leitner
+# ConTest - Parsing
 
-Jupyter Notebooks, um Jaeger-Traces und Prometheus-Daten zu joinen. Dabei wurden die Prometheus-Daten von der HTTP-API
-abgefragt und liegen im JSON-Format
-vor. ([Prometheus-Schema](https://prometheus.io/docs/prometheus/latest/querying/api/)
-und [Jaeger-Schema](https://www.jaegertracing.io/docs/1.48/apis/))
-
-Es werden dabei die Daten mithilfe des Podnamens gejoint mithilfe eines Inner-Joins. Dabei können viele Daten verloren
-gehen,
-jedoch bietet sich ein Left-Join auch nicht an, da es bei über 2000 Prometheus-Metriken sehr viele Null-Felder gibt.
-
-* [Get started!](meta/wiki/get-started.md)
-* [Funktionsweise und einzelne Notebooks](meta/wiki/documentation.md)
-* [Erkenntnisse über Daten](meta/wiki/insights-experience.md)
-
-#### Beispielverwendung:
-```
-from jaeger_prometheus_joining.controlflow.JoinManager import JoinManager
-
-
-def main():
-    manager = JoinManager()
-    manager.settings.source = "/home/gepardec/Documents/contest/Data_TrainTicket"
-    manager.settings.test_mode = False
-    manager.settings.tree_settings.print_data_with_accessing_field = True
-    manager.settings.tree_settings.accessing_field = 1
-    manager.settings.out = "./out"
-    manager.process()
-
-
-main()
-```
+Verarbeitet Prometheus- und Jaeger-Tracing-Daten und versucht diese miteinander zu joinen.
 
 ---
 
-#### README minimal outdated (TODO)! 
-* Höhere Anzahl an Settings
-* Keine Jupyter-Notebooks, sondern Python-Klassen
-* Implementierung minimal optimiert
-* Erkenntnisse blieben gleich!
+## Requirements
 
-#### TODO
+* Python 3.11
 
-* Traces zur selben Zeit mergen die Daten, so wenig leere Spalten wie möglich
-* 
+Parsing der Tracing- und Monitoringdaten:
+* Polars
+* PyArrow
+* ConTest-Tree
 
+Parsing der Logdaten:
+* logpai/logparser
+* Pandas
 
+Zum Visualisieren der Traces:
+* neo4j
+* neo4jvis
 
+Für die Docs:
+* Pdoc
 
+---
+
+## Packages
+
+* controlflow
+  * Bestimmt den Ablauf und die grundsätzliche Orchestrierung.
+* featureengineering
+  * Fügt neue Daten zu den Grunddaten hinzu bzw ändert diese markant.
+* transformationscripts
+  * Transformiert bzw. macht etwas mit den Grunddaten. 
+* util
+  * Visualisierung, Timers, andere Utilityfunktioen
+
+---
+
+## Ablauf
+
+siehe Joinmanager:
+1. Finden der Source-Daten 
+2. Ausgabe von Statistiken (Wieviel Files, etc)
+3. Clearen des Outputfolders 
+4. Parsing von den Log-Daten 
+5. Parsing von den Prometheus-Daten 
+6. Parsing von den Tracing-Daten 
+7. Joinen aller Daten 
+8. Neue Informationen aus den Daten ziehen 
+9. Struktur der Daten ändern (1 Zeile pro Trace)
+10. Graphen generieren
+
+## Aufbau der Transformationsklassen
+
+Grundsätzlich sollten fast alle Klassen eine Methode namens ```start()``` sein. 
+
+Im besten Fall ist das auch die einzige Methode, welche public ist. Diese Methode sollte auch nur andere Methoden aufrufen und somit auch nur 'orchestrieren'.
 
