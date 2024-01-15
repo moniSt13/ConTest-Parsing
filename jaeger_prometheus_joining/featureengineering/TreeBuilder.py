@@ -35,7 +35,7 @@ class TreeBuilder:
                 cur_node.add_children([node])
                 __build_tree(node)
 
-        root_spans = df.filter(col("childSpanID") == None)
+        root_spans = df.filter(col("childSpanID").is_null())
         final_df_list = []
 
         for cur_root in root_spans.iter_rows():
@@ -56,6 +56,7 @@ class TreeBuilder:
         self, df: pl.DataFrame, trace_stats_df: pl.DataFrame
     ) -> pl.DataFrame:
         if df.height == 0 or trace_stats_df.height == 0:
+            print("Warning No tree statistics found, skipping join.")
             return df
         return df.join(trace_stats_df, on="spanID")
 

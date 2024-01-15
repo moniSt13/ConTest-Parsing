@@ -22,6 +22,7 @@ class MetricsParser:
         """
         df = self.__load_data(source_path)
         df, rename_name = self.__transform_data(df)
+        df = self.__cleanup_pause_containers(df)
         df = self.__filter_data(df, rename_name)
         self.__write_to_disk(df, output_path)
 
@@ -117,6 +118,11 @@ class MetricsParser:
         if self.settings.drop_null:
             df = df.filter(col("container") != "POD").filter(col(rename_name) != 0)
         return df
+
+    def __cleanup_pause_containers(self, df: pl.DataFrame) -> pl.DataFrame:
+        return df.with_columns([
+            pl.when(col("container") == "POD").then(col("pod").str.split("-").list.reverse().list.slice(2).list.reverse().list.join("-")).otherwise(col("container")).alias("container"),
+        ])
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
         if not os.path.exists(output_path.parents[0]):
