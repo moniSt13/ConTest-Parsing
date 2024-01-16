@@ -2,6 +2,19 @@
 
 Verarbeitet Prometheus- und Jaeger-Tracing-Daten und versucht diese miteinander zu joinen.
 
+#### Alte Dokumentation unter folgende Links:
+* [Alle Skripte und deren Ablauf, als das Ganze noch Jupyter Skripte waren](meta/wiki/old/documentation.md)
+* [Ordnerstruktur Beispiel ohne Logs](meta/wiki/old/folder-struc.md)
+* [Alte Parameterbeschreibung und benötigtes Tooling](meta/wiki/old/get-started.md)
+* [Erkenntnisse/Probleme/Workarounds](meta/wiki/old/insights-experience.md)
+* [Werte zum Runden](meta/wiki/old/rounding-identifiers.md)
+
+#### Wie kann ich pdocs bauen?
+```
+pdoc ./jaeger_prometheus_joining -o ./pdocs
+```
+Es sollte ein HTML generiert werden im 'pdocs'-Verzeichnis.
+
 ---
 
 ## Requirements
@@ -105,3 +118,26 @@ Beispielstruktur der Source-Dateien, welche verarbeitet werden:
     └── etc...
 ```
 
+## Konfigurationseinstellungen
+
+Mithilfe der Klasse ParseSettings kann man einfach die Konfiguration ändern. Dabei gibt es folgende Optionen.
+
+* source
+* out
+* test_mode
+* rounding_acc
+* save_to_disk
+* output_vis
+* drop_null (rename!)
+* additional_name_tracing
+* additional_name_metrics
+* final_name_suffix
+* clear_output
+* print_statistics
+* visualize_graph
+* neo4j_uri
+* neo4j_container_name
+* tree_settings
+  * print_data
+  * print_data_with_accessing_field
+  * accessing_field
