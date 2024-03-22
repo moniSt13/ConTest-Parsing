@@ -11,11 +11,11 @@ class LogsParser:
     def __init__(self, settings: ParseSettings):
         self.settings: ParseSettings = settings
 
-    def start(self, source_path: Path, output_path: Path):
+    def start(self, source_path: Path, output_path: Path, filename):
         self.__parameterize_logs(source_path, output_path)
-        self.__to_joinable_format(output_path)
+        df = self.__to_joinable_format(output_path)
         # df = self.__parse_data(source_path)
-        # self.__write_to_disk(df, output_path)
+        self.__write_to_disk(df, output_path, filename)
 
     def __parameterize_logs(self, source_path: Path, output_path: Path):
         input_dir = source_path.parent  # The input directory of log file
@@ -49,11 +49,11 @@ class LogsParser:
                   ])
                   .drop("LoggingReporter", "Date", "Time"))
 
-            self.__write_to_disk(df, output_path.joinpath("LOGS_joinable.parquet"))
+            #self.__write_to_disk(df, output_path.joinpath(filename))
 
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
         if not os.path.exists(output_path.parents[0]):
             os.makedirs(output_path.parents[0])
 
-        df.write_parquet(output_path)
+        df.write_parquet(output_path.joinpath(filename))

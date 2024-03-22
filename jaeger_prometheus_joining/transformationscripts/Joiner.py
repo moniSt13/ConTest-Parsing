@@ -30,9 +30,13 @@ class Joiner:
         df_tracing, df_logs, df_metrics = self.__load_data(
             tracing_filepath, logs_filepath, metrics_filepaths
         )
+
         df_joined = self.__join_data(df_tracing, df_metrics)
+        
         df_joined = self.__join_with_logs(df_joined, df_logs)
+        
         self.__write_to_disk(df_joined, output_path)
+        print("loaded to disk")
 
     def __load_data(
         self, tracing_filepath: Path, logs_filepath: Path, metrics_filepaths: list[Path]

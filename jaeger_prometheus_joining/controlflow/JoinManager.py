@@ -44,7 +44,7 @@ class JoinManager:
         :return:
         """
         path_list = FilepathFinder(self.settings).find_files()
-
+        print(f"Found following folders to process: {path_list}")
         self.__print_statistics(path_list)
         self.__clear_output()
         self.__parse_logs(path_list)
@@ -60,9 +60,10 @@ class JoinManager:
         logs_parser = LogsParser(self.settings)
         for service, sources in path_list.items():
             for logs_file in sources["logs"]:  # type: Path
+                filename = logs_file.name.lower().split(".")[-2] + ".parquet"
                 output_path = self.settings.out.joinpath(service, "logs")
 
-                logs_parser.start(logs_file, output_path)
+                logs_parser.start(logs_file, output_path,filename)
 
     @timer
     def __parse_metrics(self, path_list: dict):
@@ -91,7 +92,7 @@ class JoinManager:
                 self.settings.out.joinpath(service, "traces"),
                 self.settings.additional_name_tracing,
             )
-
+        
     @timer
     def __join(self):
         joiner = Joiner(self.settings)
@@ -103,10 +104,10 @@ class JoinManager:
             output_path = self.settings.out.joinpath(
                 service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
+            
             tracing_filepath = service.joinpath("traces", "traces-merged-file.parquet")
             metrics_filepaths = list(service.joinpath("monitoring").glob("*.parquet"))
             logs_filepath = service.joinpath("logs", "LOGS_joinable.parquet")
-
             joiner.start(tracing_filepath, metrics_filepaths, logs_filepath, output_path)
 
     @timer
@@ -186,9 +187,12 @@ class JoinManager:
                 trace_size = (
                     sum([x.stat().st_size for x in folder["traces"]]) / 1_000_000
                 )
+                log_size = (
+                    sum([x.stat().st_size for x in folder["logs"]]) / 1_000_000
+                )
                 found_folders[
                     name
-                ] = f"{mon_size}MB of metric data, {trace_size}MB of trace data"
+                ] = f"{mon_size}MB of metric data, {trace_size}MB of trace data, {log_size}MB of log data"
 
             stats = "\n".join([f"{k}: {v}" for k, v in found_folders.items()])
 
