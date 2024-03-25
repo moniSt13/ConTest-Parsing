@@ -17,7 +17,7 @@ class Joiner:
         self,
         tracing_filepath: Path,
         metrics_filepaths: list[Path],
-        logs_filepath: Path,
+        logs_filepath: list[Path],
         output_path: Path,
     ):
         """
@@ -30,13 +30,13 @@ class Joiner:
         df_tracing, df_logs, df_metrics = self.__load_data(
             tracing_filepath, logs_filepath, metrics_filepaths
         )
-
         df_joined = self.__join_data(df_tracing, df_metrics)
         
-        df_joined = self.__join_with_logs(df_joined, df_logs)
+        #df_joined = self.__join_with_logs(df_joined, df_logs)
+        #join logs based on timestamp and servicename instead of joining based on spanID (join_with_logs)
+        df_joined = self.__join_with_logs_timeframe(df_joined, df_logs)
         
         self.__write_to_disk(df_joined, output_path)
-        print("loaded to disk")
 
     def __load_data(
         self, tracing_filepath: Path, logs_filepath: Path, metrics_filepaths: list[Path]
@@ -117,21 +117,95 @@ class Joiner:
         # Drops all data which couldn't be joined
         if "container" in tracing.columns:
             tracing = tracing.drop_nulls(subset="container")
-
+        tracing.write_csv("joined_tracingANDMetrics.csv")
         return tracing
 
-    def __join_with_logs(self, df: pl.DataFrame, log_df: pl.DataFrame):
+    def __join_with_logs(self, df: pl.DataFrame, log_df: pl.DataFrame):        
+        log_df.write_csv("log_df.csv")
         joined_df = df.join(
             log_df,
             left_on=["servicename", "starttime"],
             right_on=["source-servicename", "timestamp"],
             how="left",
         )
+        
+        
+
+        #create dict of available spans and their eventId
+        available_spans = joined_df.select("spanID").to_dict()
+
+        #count occurances of columen Level per SpanID and add column to df
+        #joined_df = joined_df.with_columns([when(col("Level") == "WARN").then(1).otherwise(0).alias("warnings")])
+        list_of_warnings = {
+            'spanID': [],
+            'AmountOfWarning': [],
+            'AmountOfError': [],
+            'AmountOfInfo': [],
+            'amount of uniue eventID per spanID': []
+        }
+        
+        for spanID in available_spans['spanID']:
+            warnings_per_span = joined_df.filter(col("spanID") == spanID).filter(col("Level") == "WARN").height
+            error_per_span = joined_df.filter(col("spanID") == spanID).filter(col("Level") == "ERROR").height
+            info_per_span = joined_df.filter(col("spanID") == spanID).filter(col("Level") == "INFO").height
+            count_unique_eventID = joined_df.filter(col("spanID") == spanID).select("EventId").unique().height
+            list_of_warnings['spanID'].append(spanID)
+            list_of_warnings['AmountOfWarning'].append(warnings_per_span)
+            list_of_warnings['AmountOfError'].append(error_per_span)
+            list_of_warnings['AmountOfInfo'].append(info_per_span)
+            list_of_warnings['amount of uniue eventID per spanID'].append(count_unique_eventID)
+
+        
+        df_temp = pl.from_dict(list_of_warnings)
+        #remove dublicates from df_temp["spanID"]
+        df_temp = df_temp.unique("spanID")
+
+        joined_df.write_csv("joined_beforeconcat.csv")
+        
+        joined_df = joined_df.join(
+            df_temp,
+            on=["spanID"],
+            how="left",
+        )
+
+        #joined_df = joined_df.with_columns([when(col("spanID") == spanID).then(warnings_per_span).otherwise(0).alias("warnings")])
+
+        #    print("warnings per span: ", warnings_per_span, "with spanID: ", spanID, "with eventID", joined_df.filter(col("spanID") == spanID).select("EventId"))
+        #    #write warnings_per_span to joined_df
+     
+        #    print("joined df spanID", joined_df.filter(col("spanID") == spanID))
+        #    joined_df = joined_df.with_columns([when(col("spanID") == spanID).then(warnings_per_span).otherwise(0).alias("warnings")])
+
+        joined_df.write_csv("joined.csv")
+
+
+        #print("available spans: ", available_spans.values())
+        #for uniquespanId in available_spans['spanID']:
+        #    print("spanId: ", uniquespanId)
+            # select eventId for each spanId and add to available_spans            
+            #eventId = joined_df.filter(col("spanID") == spanId).select("EventId").to_dict()
+            #available_spans[spanId] = "test für spanId" + spanId
+        
+        
+        
+
+         
+        #added_eventIds = joined_df.select("EventId").to_dict()
+        # ad eventIds to available_spans
+
+
+        #available_spans = {joined_df.filter(col("spanID") == spanID).select("EventId").to_dict() for spanID in available_spans}
+        #print("available spans and corresponding eventIds: ", available_spans)
+        
+        #create list of available logs
+        #available_logs = joined_df.select("EventId").to_list()
+
 
         # TODO count unique spanIDs (how many joins happened) and add count to row. drop duplicate spanId rows
         n_logs_per_span = joined_df.select(pl.col("spanID").value_counts()).unnest(
             "spanID"
         )
+        #print("logs joining: n_logs_per_span", n_logs_per_span)
 
         joined_df = (
             joined_df.unique("spanID")
@@ -143,6 +217,47 @@ class Joiner:
         # TODO works as intended, already tested with output
         # print(n_logs_per_span)
 
+        return joined_df
+
+    #counts number of occurances of a log per service until a specific timeframe
+    def __join_with_logs_timeframe(self, df: pl.DataFrame, log_df: pl.DataFrame):
+        date = "2021-03-22 00:00:00"
+        available_starttimes = df.select("starttime").to_dict()
+        list_of_occurances = {
+            'starttime': [],
+            'servicename': [],
+            'NumberofOccurances_all': [],
+            'NumberofOccurances_warn': [],
+            'NumberofOccurances_error': [],
+            'NumberofOccurances_info': []
+        }
+        list_times = df.get_column('starttime').unique()
+
+        microservices = log_df.get_column('source-servicename').unique()
+        
+        for date in df.get_column('starttime').unique():
+            for microservice in log_df.get_column('source-servicename').unique():
+                list_of_occurances['servicename'].append(microservice)
+                list_of_occurances['starttime'].append(date)
+                #filter df that is smaller than date and grouped by microservice
+                list_of_occurances['NumberofOccurances_all'].append(log_df.filter(col('original_timestamp') <= date).filter(col('source-servicename') == microservice).height)
+                list_of_occurances['NumberofOccurances_warn'].append(log_df.filter(col('original_timestamp') <= date).filter(col('Level') == "WARN").filter(col('source-servicename') == microservice).height)
+                list_of_occurances['NumberofOccurances_error'].append(log_df.filter(col('original_timestamp') <= date).filter(col('Level') == "ERROR").filter(col('source-servicename') == microservice).height)
+                list_of_occurances['NumberofOccurances_info'].append(log_df.filter(col('original_timestamp') <= date).filter(col('Level') == "INFO").filter(col('source-servicename') == microservice).height)
+        
+        # for whole system -> microservice unspecific
+        #list_of_occurances['NumberofOccurances_all'].append(log_df.filter(col('original_timestamp') <= date).height)
+        #iterate of log_df['original_timestamp'] and count how many logs are available until date
+        df_temp = pl.from_dict(list_of_occurances)
+        
+        df_temp.write_csv("joined_with_logs_timeframe.csv")
+
+        joined_df = df.join(
+            df_temp,
+            on=["starttime",'servicename'],
+            how="left",
+        )
+        joined_df.write_csv("joined_with_logs_timeframe.csv")
         return joined_df
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):

@@ -44,7 +44,7 @@ class JoinManager:
         :return:
         """
         path_list = FilepathFinder(self.settings).find_files()
-        print(f"Found following folders to process: {path_list}")
+        #print(f"Found following folders to process: {path_list}")
         self.__print_statistics(path_list)
         self.__clear_output()
         self.__parse_logs(path_list)
@@ -61,9 +61,10 @@ class JoinManager:
         for service, sources in path_list.items():
             for logs_file in sources["logs"]:  # type: Path
                 filename = logs_file.name.lower().split(".")[-2] + ".parquet"
+                
                 output_path = self.settings.out.joinpath(service, "logs")
-
-                logs_parser.start(logs_file, output_path,filename)
+                print(f"Processing {logs_file} to outputpath {output_path}")
+                logs_parser.start(logs_file, output_path, filename)           
 
     @timer
     def __parse_metrics(self, path_list: dict):
@@ -107,7 +108,7 @@ class JoinManager:
             
             tracing_filepath = service.joinpath("traces", "traces-merged-file.parquet")
             metrics_filepaths = list(service.joinpath("monitoring").glob("*.parquet"))
-            logs_filepath = service.joinpath("logs", "LOGS_joinable.parquet")
+            logs_filepath = list(service.joinpath("logs").glob("*.parquet")) #service.joinpath("logs", "LOGS_joinable.parquet")
             joiner.start(tracing_filepath, metrics_filepaths, logs_filepath, output_path)
 
     @timer

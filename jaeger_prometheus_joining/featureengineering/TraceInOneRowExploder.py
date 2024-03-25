@@ -95,6 +95,7 @@ class TracesInOneRowExploder:
                 col("duration").mean().alias("mean_duration"),
                 col("duration").min().alias("min_duration"),
                 col("duration").max().alias("max_duration"),
+                #col("NumberofOccurances_all").mean().alias("")
             )
 
             one_row_traces = []

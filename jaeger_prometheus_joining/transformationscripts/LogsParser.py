@@ -13,7 +13,7 @@ class LogsParser:
 
     def start(self, source_path: Path, output_path: Path, filename):
         self.__parameterize_logs(source_path, output_path)
-        df = self.__to_joinable_format(output_path)
+        df = self.__to_joinable_format(output_path, filename)
         # df = self.__parse_data(source_path)
         self.__write_to_disk(df, output_path, filename)
 
@@ -35,7 +35,7 @@ class LogsParser:
         )
         parser.parse(log_file)
 
-    def __to_joinable_format(self, output_path: Path):
+    def __to_joinable_format(self, output_path: Path, filename):
         for logfile in output_path.iterdir():
             if 'structured' not in logfile.name:
                 continue
@@ -43,17 +43,22 @@ class LogsParser:
             df = (pl.read_csv(logfile)
                   .drop("Content", "EventTemplate", "ParameterList", "LineId", "Number")
                   .with_columns([
-                        ("ts-" + pl.col("LoggingReporter").str.split("] ").list.get(1).str.split(".").list.get(0) + "-service").alias("source-servicename"),
+                        pl.lit(filename.split(".")[0]).alias("source-servicename"),
+                        #("ts-" + pl.col("LoggingReporter").str.split("] ").list.get(1).str.split(".").list.get(0) + "-service").alias("source-servicename"),
                         (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().dt.round(self.settings.rounding_acc).alias("timestamp"),
                         (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().alias("original_timestamp")
                   ])
                   .drop("LoggingReporter", "Date", "Time"))
 
-            #self.__write_to_disk(df, output_path.joinpath(filename))
+            return df
+            #self.__write_to_disk(df, output_path.joinpath("LOGS_joinable.parquet"))
 
 
-    def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
+    def __write_to_disk(self, df: pl.DataFrame, output_path: Path,filename):
         if not os.path.exists(output_path.parents[0]):
             os.makedirs(output_path.parents[0])
-
+        
         df.write_parquet(output_path.joinpath(filename))
+    
+    
+        
