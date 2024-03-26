@@ -95,7 +95,16 @@ class TracesInOneRowExploder:
                 col("duration").mean().alias("mean_duration"),
                 col("duration").min().alias("min_duration"),
                 col("duration").max().alias("max_duration"),
-                #col("NumberofOccurances_all").mean().alias("")
+                col("NumberofOccurances_all").mean().alias("mean_number_of_occurences_ALL"),
+                col("NumberofOccurances_error").mean().alias("mean_number_of_occurences_ERROR"),
+                col("NumberofOccurances_info").mean().alias("mean_number_of_occurences_INFO"),
+                col("NumberofOccurances_warn").mean().alias("mean_number_of_occurences_WARN"),
+                #col("NumberofOccurances_all").max().alias("max_number_of_occurences_ALL"),
+                #col("NumberofOccurances_error").max().alias("max_number_of_occurences_ERROR"),
+                #col("NumberofOccurances_info").max().alias("max_number_of_occurences_INFO"),
+                #col("NumberofOccurances_warn").max().alias("max_number_of_occurences_WARN"),
+
+
             )
 
             one_row_traces = []
