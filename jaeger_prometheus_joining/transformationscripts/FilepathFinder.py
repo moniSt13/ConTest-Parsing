@@ -53,7 +53,7 @@ class FilepathFinder:
                 len(path_list[service.name]["monitoring"]) == 0
                 or len(path_list[service.name]["traces"]) == 0
             ):
-                print("deleted monitoring or traces: ", path_list[service.name])
+                #print("deleted monitoring or traces: ", path_list[service.name])
                 del path_list[service.name]
                 
 

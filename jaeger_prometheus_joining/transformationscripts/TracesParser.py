@@ -140,6 +140,11 @@ class TracesParser:
             .with_columns(
                 col("starttime").cast(Datetime).dt.round(self.settings.rounding_acc)
             )
+             .with_columns(
+                [
+                    col("starttime").cast(Datetime).alias("original_timestamp")
+                ]
+            )              
         )
 
         return df

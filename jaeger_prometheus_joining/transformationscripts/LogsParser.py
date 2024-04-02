@@ -48,7 +48,7 @@ class LogsParser:
                         (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().dt.round(self.settings.rounding_acc).alias("timestamp"),
                         (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().alias("original_timestamp")
                   ])
-                  .drop("LoggingReporter", "Date", "Time"))
+                  .drop("LoggingReporter"))
 
             return df
             #self.__write_to_disk(df, output_path.joinpath("LOGS_joinable.parquet"))

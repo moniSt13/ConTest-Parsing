@@ -15,7 +15,7 @@ It may look like this:
 | 1         | 1        | ts-admin       | 1         | 2        | ts-seat        | 1         | 3        | ts-admin       | 1         | 4        | ts-security    |
 |           |          |                |           |          |                |           |          |                |           |          |                |
 
-zu
+to
 
 | 0-traceID | 0-spanID | ts-admin | 1-traceID | 1-spanID | ts-seat | 2-traceID | 2-spanID | ts-security | 3-traceID | 3-spanID | ts-another |
 |-----------|----------|----------|-----------|----------|---------|-----------|----------|-------------|-----------|----------|------------|
@@ -95,16 +95,15 @@ class TracesInOneRowExploder:
                 col("duration").mean().alias("mean_duration"),
                 col("duration").min().alias("min_duration"),
                 col("duration").max().alias("max_duration"),
-                col("NumberofOccurances_all").mean().alias("mean_number_of_occurences_ALL"),
-                col("NumberofOccurances_error").mean().alias("mean_number_of_occurences_ERROR"),
-                col("NumberofOccurances_info").mean().alias("mean_number_of_occurences_INFO"),
-                col("NumberofOccurances_warn").mean().alias("mean_number_of_occurences_WARN"),
-                #col("NumberofOccurances_all").max().alias("max_number_of_occurences_ALL"),
-                #col("NumberofOccurances_error").max().alias("max_number_of_occurences_ERROR"),
-                #col("NumberofOccurances_info").max().alias("max_number_of_occurences_INFO"),
-                #col("NumberofOccurances_warn").max().alias("max_number_of_occurences_WARN"),
-
-
+                col("NumberofOccurances_all").mean().alias("mean_number_of_occurrences_ALL"),
+                col("NumberofOccurances_error").mean().alias("mean_number_of_occurrences_ERROR"),
+                col("NumberofOccurances_info").mean().alias("mean_number_of_occurrences_INFO"),
+                col("NumberofOccurances_warn").mean().alias("mean_number_of_occurrences_WARN"),
+                col("numberOfUniqueEventIds").mean().alias("mean_number_of_unique_event_ids"),                                                                                     
+                #col("NumberofOccurances_all").max().alias("max_number_of_occurrences_ALL"),
+                #col("NumberofOccurances_error").max().alias("max_number_of_occurrences_ERROR"),
+                #col("NumberofOccurances_info").max().alias("max_number_of_occurrences_INFO"),
+                #col("NumberofOccurances_warn").max().alias("max_number_of_occurrences_WARN"),
             )
 
             one_row_traces = []

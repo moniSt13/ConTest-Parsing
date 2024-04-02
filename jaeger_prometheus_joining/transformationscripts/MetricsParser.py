@@ -59,6 +59,9 @@ class MetricsParser:
                                                 Field("node", Utf8),
                                                 Field("pod", Utf8),
                                                 Field("service", Utf8),
+                                                #my identified fields that include microservice name
+                                                Field("net_host_name", Utf8),
+                                                Field("deployment", Utf8),                                                    
                                             ]
                                         ),
                                     ),
@@ -104,6 +107,7 @@ class MetricsParser:
 
         df = df.with_columns(
             [
+                pl.from_epoch(col("values").list[0].cast(Float64)).alias("original_date"),                                                                          
                 pl.from_epoch(col("values").list[0].cast(Float64)).dt.round(self.settings.rounding_acc).alias(
                     "measure_time"
                 ),
@@ -111,7 +115,7 @@ class MetricsParser:
             ]
         ).drop("values", "__name__")
 
-
+        
         return df, rename_name
 
     def __filter_data(self, df: pl.DataFrame, rename_name: str):
