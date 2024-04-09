@@ -113,7 +113,7 @@ class MetricsParser:
                 ),
                 col("values").list[1].cast(Float64).alias(rename_name),
             ]
-        ).drop("values", "__name__")
+        ).drop("values")
 
         
         return df, rename_name
