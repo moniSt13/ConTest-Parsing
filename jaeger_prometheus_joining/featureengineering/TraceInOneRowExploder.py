@@ -40,7 +40,7 @@ class TracesInOneRowExploder:
 
     def start(self, source_path: Path, output_path: Path):
         df = pl.read_csv(source_path)
-        
+        df = self.typecast_column_if_exists(df, pl.Utf8, "http.status_code")
         one_line_dfs, microservice_lookup_df = self.__split_trace_into_one_row(df)
         print("was braucht hier so lange: split trace into one row")
         final_df = self.__combine_single_traces(one_line_dfs, microservice_lookup_df)
