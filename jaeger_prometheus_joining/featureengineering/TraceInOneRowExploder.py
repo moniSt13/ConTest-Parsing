@@ -44,6 +44,7 @@ class TracesInOneRowExploder:
         one_line_dfs, microservice_lookup_df = self.__split_trace_into_one_row(df)
         final_df = self.__combine_single_traces(one_line_dfs, microservice_lookup_df)
         df_systemwideMetrics = pl.read_csv(source_path_systemwideMetrics)
+        df_systemwideMetrics = self.typecast_column_if_exists(df_systemwideMetrics, pl.Utf8, "http.status_code")
         final_df = self.__add_SystemWideMetrics(final_df, df_systemwideMetrics)
         
         self.__write_to_disk(final_df, output_path)
