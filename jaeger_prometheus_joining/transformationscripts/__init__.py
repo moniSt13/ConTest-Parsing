@@ -5,4 +5,4 @@ Furthermore it should have a single entrypoint: A method called `start`. In tota
 * TracesParser
 * FileConcat
 * Joiner
-* TraceInOneRowExploder (should be moved to `featureengineering` but I'm not sure yet.)"""
+* TraceInOneRowExploder """

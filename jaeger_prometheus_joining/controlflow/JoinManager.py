@@ -44,6 +44,7 @@ class JoinManager:
         :return:
         """
         path_list = FilepathFinder(self.settings).find_files()
+        
         #print(f"Found following folders to process: {path_list}")
         self.__print_statistics(path_list)
         self.__clear_output()
@@ -106,10 +107,18 @@ class JoinManager:
                 service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
             
+            
             tracing_filepath = service.joinpath("traces", "traces-merged-file.parquet")
+            
             metrics_filepaths = list(service.joinpath("monitoring").glob("*.parquet"))
+            
             logs_filepath = list(service.joinpath("logs").glob("*.parquet")) #service.joinpath("logs", "LOGS_joinable.parquet")
-            joiner.start(tracing_filepath, metrics_filepaths, logs_filepath, output_path)
+
+            source_path_systemwideMetric = self.settings.out.joinpath(
+                service.name,  f"{service.name}-joined_df_metrics.csv" 
+            )
+            
+            joiner.start(tracing_filepath, metrics_filepaths, logs_filepath, output_path, source_path_systemwideMetric)
 
     @timer
     def __add_tree_statistics(self):
@@ -123,6 +132,9 @@ class JoinManager:
                 service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
 
+            #output_path = self.settings.out.joinpath(
+            #    service.name, f"{service.name}-{self.settings.final_name_suffix}-afterTreeBuilder.csv"
+            #)
             output_path = source_path
 
             tree_builder.start(source_path, output_path)
@@ -142,6 +154,7 @@ class JoinManager:
                 service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
 
+
             output_path = self.settings.out.joinpath(
                 service.name, "visualized-graph.html"
             )
@@ -158,12 +171,16 @@ class JoinManager:
                 service.name, f"{service.name}-{self.settings.final_name_suffix}.csv"
             )
 
+            source_path_systemwideMetric = self.settings.out.joinpath(
+                service.name,  f"{service.name}-joined_df_metrics.csv" 
+            )
+
             output_path = self.settings.out.joinpath(
                 service.name,
                 f"{service.name}-{self.settings.final_name_suffix}-exploded.csv",
             )
 
-            exploder.start(source_path, output_path)
+            exploder.start(source_path, output_path, source_path_systemwideMetric)
 
     def __concat_files(self, output_path: Path, additional_name: str):
         file_concat = FileConcat(self.settings)

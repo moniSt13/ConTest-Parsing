@@ -2,6 +2,7 @@
 large csv-file."""
 
 from pathlib import Path
+from time import sleep
 
 import polars as pl
 from polars import when, col, lit
@@ -19,6 +20,7 @@ class Joiner:
         metrics_filepaths: list[Path],
         logs_filepath: list[Path],
         output_path: Path,
+        output_path_systemWideMetrics: Path,
     ):
         """
         :param logs_filepath:
@@ -30,12 +32,15 @@ class Joiner:
         df_tracing, df_logs, df_metrics = self.__load_data(
             tracing_filepath, logs_filepath, metrics_filepaths
         )
+        print("Before joining traces and metrics")
         df_joined = self.__join_data(df_tracing, df_metrics)
-        
-        #df_joined = self.__join_with_logs(df_joined, df_logs)
+        print("After joining traces and metrics")
         #join logs based on timestamp and servicename instead of joining based on spanID (join_with_logs)
+        print("Before joining logs")
         df_joined = self.__join_with_logs_timeframe(df_joined, df_logs)
-        
+        print("Before joining system wide metrics")
+        df_joined = self.__add_systemWideNetworkMetrics(df_joined, df_metrics, output_path_systemWideMetrics)
+       
         self.__write_to_disk(df_joined, output_path)
 
     def __load_data(
@@ -81,23 +86,15 @@ class Joiner:
         :return:
         """
         for metrics in all_metrics:
+            
+            #metrics.glimpse()
             joined = tracing.join(
                 metrics,
                 left_on=["podname", "starttime"],
                 right_on=["pod", "measure_time"],
                 how="left",
             )
-
-            # Resource hungry
-            # joined = tracing.join_asof(
-            #     metrics,
-            #     left_on="starttime",
-            #     right_on="measure_time",
-            #     by_left="podname",
-            #     by_right="pod",
-            # )
-            # print(joined.select(pl.last()))
-
+            
             joined = joined[:, [not (s.null_count() == joined.height) for s in joined]]
 
             if joined.height > 0:
@@ -258,6 +255,104 @@ class Joiner:
         )
         #joined_df.write_csv("joined_with_logs_timeframe.csv")
         return joined_df
+    
+
+
+
+    def __join_data_systemSpecific(self, joined_df: pl.DataFrame, all_metrics: list[pl.DataFrame]):
+        for metric in all_metrics:            
+            if ("device") in metric.columns:
+                #tmp_metric = metric.with_columns(
+                #    pl.when(pl.col('device')=='eth0')
+                #    .then(pl.lit('wholeSystem'))
+                #    .otherwise(pl.lit('nothing'))
+                #    .alias('new_device')
+                #    )
+                #print("TMP METRIC: ", tmp_metric.glimpse())
+
+                #tmp_metric = metric.with_columns(pl.when(pl.col("device") == "eth0" & pl.col("job") == "kubernetes-pods").then(pl.lit("wholeSystem")))
+                tmp_metric = metric.filter((col("device") == "eth0") & (col("job") == "kubernetes-pods"))
+                if tmp_metric.height > 0:
+                    joined_df = joined_df.join(
+                        tmp_metric, 
+                        left_on=["starttime"],
+                        right_on=["measure_time"],
+                        how="left",
+                    )
+                
+
+                '''joined = joined_df[:, [not (s.null_count() == joined_df.height) for s in joined_df]]
+
+                    if joined.height > 0:
+                        cur_height = joined.height
+                        joined = joined.unique("spanID")
+                        tracing = joined
+
+                        if self.settings.output_vis:
+                            print(f"Datasize from {cur_height} to {cur_height - joined.height}")
+
+                    duplicate_columns = [
+                        col_name for col_name in tracing.columns if col_name.endswith("right")
+                    ]
+                    if len(duplicate_columns) > 0:
+                        tracing = tracing.drop(duplicate_columns) '''
+                
+
+        return joined_df
+
+    def __add_systemWideNetworkMetrics(self, joined_df: pl.DataFrame, all_metrics: list[pl.DataFrame], output_path_systemWideMetrics: Path):
+        #print(joined_df.glimpse())
+        tmp_df: list[pl.DataFrame] = []
+        for metric in all_metrics: 
+            if ("device") in metric.columns:
+                tmp_metric = metric.filter((col("device") == "eth0") & (col("job") == "kubernetes-service-endpoints"))
+                if tmp_metric.height > 0:
+                    tmp_metric = tmp_metric.drop("status", "resultType", "container", "endpoint", "id", "image", "instance", "job", "metrics_path", "name", "namespace", "node", "pod", "service", "net_host_name", "deployment", "apiserver", "method")
+                    tmp_df.append(tmp_metric)
+            #if ("subresource") in metric.columns:
+            #    tmp_metric = metric.filter((col("subresource") == "/livez") & (col("job") == "kubernetes-apiservers")) #& (col("le") == "0.005")
+            #    print("KOMME ICH HIER HIN mit: ", metric.glimpse())
+            #    print("METRIC For theoretical subressource", tmp_metric)
+            #    if tmp_metric.height > 0:
+                   
+            #        tmp_metric = tmp_metric.drop("status", "resultType", "container", "endpoint", "id", "image", "instance", "job", "metrics_path", "name", "namespace", "node", "pod", "service", "net_host_name", "deployment", "device", "method")
+            #        tmp_df.append(tmp_metric)
+              
+        joined_df_metrics = pl.DataFrame({"original_date": tmp_df[0].get_column("original_date")})
+        for i in range(len(tmp_df)):
+            joined_df_metrics = pl.concat([joined_df_metrics, tmp_df[i]], how="align", rechunk=False, parallel=True)
+        #remove duplicate columns
+        joined_df_metrics = joined_df_metrics[:, [not (s.null_count() == joined_df_metrics.height) for s in joined_df_metrics]]
+        joined_df_metrics = joined_df_metrics.rename({"device": "servicename"})#, "original_date": "original_timestamp", "measure_time": "starttime"})
+
+        #add string to all columns
+        for column in joined_df_metrics.columns:
+            joined_df_metrics = joined_df_metrics.rename({column: "systemWide-"+column})
+        
+        joined_df_metrics = joined_df_metrics.drop("systemWide-servicename")
+        
+        #average of each column when systemWide-measure_time is the same (Original date is lost in this process)
+        joined_df_metrics = joined_df_metrics.groupby("systemWide-measure_time").agg(
+            [
+                pl.col("systemWide-node_network_transmit_bytes_total").mean().alias("systemWide-node_network_transmit_bytes_total_mean"),
+                pl.col("systemWide-node_network_transmit_drop_total").mean().alias("systemWide-node_network_transmit_drop_total_mean"),
+                pl.col("systemWide-node_network_transmit_errs_total").mean().alias("systemWide-node_network_transmit_errs_total_mean"),
+                pl.col("systemWide-node_network_transmit_packets_total").mean().alias("systemWide-node_network_transmit_packets_total_mean"),
+                pl.col("systemWide-node_network_receive_bytes_total").mean().alias("systemWide-node_network_receive_bytes_total_mean"),
+                #pl.col("systemWide-apiserver_request_duration_seconds_bucket").mean().alias("systemWide-apiserver_request_duration_seconds_bucket_mean"),
+            ]
+        )
+
+
+        joined_df_metrics.write_csv(output_path_systemWideMetrics)
+        
+        
+
+        #concat with joined_df
+        joined_df = pl.concat([joined_df, joined_df_metrics], how="diagonal", rechunk=False, parallel=True)
+        joined_df.write_csv("joined_df_all.csv")
+        return joined_df
+
 
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
         if self.settings.save_to_disk:

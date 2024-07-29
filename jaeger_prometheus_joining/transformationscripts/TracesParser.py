@@ -35,6 +35,9 @@ class TracesParser:
         with open(filepath) as inp_file:
             raw_data = json.load(inp_file)["data"]
             processes = list(map(lambda x: x["processes"], raw_data))
+            #print("raw data: ", raw_data)
+            #print("processes: ", processes)
+
 
             for row in processes:
                 for processId in row:
@@ -96,7 +99,10 @@ class TracesParser:
         }
 
         df = pl.read_json(filepath, schema=schema)
+        # print the dict in a list
 
+
+        #print("process lookup: ", process_lookup)
         return df, process_lookup
 
     def __transform_data(self, df: pl.DataFrame, process_lookup: dict):
@@ -138,13 +144,17 @@ class TracesParser:
             .unnest("processID")
             .rename({"startTime": "starttime"})
             .with_columns(
-                col("starttime").cast(Datetime).dt.round(self.settings.rounding_acc)
-            )
-             .with_columns(
+																					
+			 
+						   
                 [
                     col("starttime").cast(Datetime).alias("original_timestamp")
                 ]
-            )              
+            )      
+            .with_columns(
+                col("starttime").cast(Datetime).dt.round(self.settings.rounding_acc)
+            )
+                     
         )
 
         return df

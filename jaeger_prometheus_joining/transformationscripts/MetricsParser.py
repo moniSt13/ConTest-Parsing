@@ -24,6 +24,7 @@ class MetricsParser:
         df, rename_name = self.__transform_data(df)
         df = self.__cleanup_pause_containers(df)
         df = self.__filter_data(df, rename_name)
+        df = self.__clean_no_defined_pod(df)
         self.__write_to_disk(df, output_path)
 
         if self.settings.output_vis:
@@ -48,6 +49,7 @@ class MetricsParser:
                                             [
                                                 Field("__name__", Utf8),
                                                 Field("container", Utf8),
+                                                Field("device", Utf8),
                                                 Field("endpoint", Utf8),
                                                 Field("id", Utf8),
                                                 Field("image", Utf8),
@@ -61,7 +63,9 @@ class MetricsParser:
                                                 Field("service", Utf8),
                                                 #my identified fields that include microservice name
                                                 Field("net_host_name", Utf8),
-                                                Field("deployment", Utf8),                                                    
+                                                Field("deployment", Utf8),
+                                                Field("subresource", Utf8), #apiserver_request_duration_seconds_bucket
+                                                Field("le", Utf8), #apiserver_request_duration_seconds_bucket                                                    
                                             ]
                                         ),
                                     ),
@@ -95,7 +99,10 @@ class MetricsParser:
             "method",
             "pod",
             "values",
-        ]
+            "device",
+            "subresource",
+            "le",
+        ] #if mapping on other specify them here
 
         for i in necessary_columns:
             if i not in df.columns:
@@ -113,7 +120,7 @@ class MetricsParser:
                 ),
                 col("values").list[1].cast(Float64).alias(rename_name),
             ]
-        ).drop("values")
+        ).drop("values", "__name__")
 
         
         return df, rename_name
@@ -122,6 +129,9 @@ class MetricsParser:
         if self.settings.drop_null:
             df = df.filter(col("container") != "POD").filter(col(rename_name) != 0)
         return df
+    
+    def __clean_no_defined_pod(self, df: pl.DataFrame): #clean rows that do not contain pod name or device because these two types are used for joining
+        return df.filter(((col("pod") != "") | (col("pod").is_null() == False)) | (col("device").is_null() == False))
 
     def __cleanup_pause_containers(self, df: pl.DataFrame) -> pl.DataFrame:
         return df.with_columns([

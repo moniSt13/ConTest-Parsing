@@ -14,7 +14,7 @@ class FilepathFinder:
         for service in self.settings.source.iterdir():
             if not service.is_dir():
                 continue
-
+            
             path_list[service.name] = {"monitoring": [], "traces": [], "logs": []}
 
             for category in service.iterdir():
@@ -60,5 +60,5 @@ class FilepathFinder:
         if self.settings.test_mode:
             while len(path_list.keys()) > 2:
                 path_list.popitem()
-        print("*****************************", path_list)
+        #print("*****************************", path_list)
         return path_list

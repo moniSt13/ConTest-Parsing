@@ -12,9 +12,9 @@ def test_start():
     join_manager.settings.rounding_acc = "5m"
     join_manager.settings.drop_null = False
     join_manager.settings.test_mode = False
-    join_manager.settings.out = "../out_test_Pirmin_newLogsJoined/"
+    join_manager.settings.out = "../MonitoringData/Output_generatedLocally/out_ESEM/"
     join_manager.settings.source = (
-        "/home/monika/Documents/Papers/RiskAnalysis/2_MAIN_ExplainabilityModel/Parameter/MonitoringData/Pirmin/" # _local (copy)/" #"/home/michaelleitner/Documents/contest/Data_TrainTicket/"
+        "/home/monika/Documents/Papers/RiskAnalysis/2_MAIN_ExplainabilityModel/Parameter/MonitoringData/ESEM/"#_CCCom/blids/"
     )
     # join_manager.settings.source = (
     #     "/home/michaelleitner/Documents/contest/Data_TrainTicket_Pirmin/"
