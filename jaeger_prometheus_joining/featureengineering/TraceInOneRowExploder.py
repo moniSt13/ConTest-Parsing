@@ -30,6 +30,8 @@ from pathlib import Path
 import polars as pl
 from polars import col, Utf8
 import regex as re
+import csv
+import polars.exceptions as pl_exc
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -39,7 +41,7 @@ class TracesInOneRowExploder:
         self.settings: ParseSettings = settings
 
     def start(self, source_path: Path, output_path: Path, source_path_systemwideMetrics: Path):
-        df = pl.read_csv(source_path)
+        df = pl.read_csv(source_path, infer_schema_length=10000)
         df = self.typecast_column_if_exists(df, pl.Utf8, "http.status_code")
         one_line_dfs, microservice_lookup_df = self.__split_trace_into_one_row(df)
         final_df = self.__combine_single_traces(one_line_dfs, microservice_lookup_df)
@@ -81,6 +83,9 @@ class TracesInOneRowExploder:
                     )
 
             #print("traceid: ", trace_id, " trace_df: ", trace_df)
+            print("Before aggregating the columns")
+            print("trace_df columns - max depth", trace_df['max_depth'])
+            print("trace_df columns spanID", trace_df['spanID'])
             aggregated_df = trace_df.group_by(col("servicename")).agg(
                 col("max_depth").mean().alias("mean_max_depth"),
                 col("min_depth").mean().alias("mean_min_depth"),
@@ -133,21 +138,82 @@ class TracesInOneRowExploder:
                 single_service_json["operationName"] = [
                     single_service_json["operationName"]
                 ]
+                #single_service_json["mode_http_status_code"] = [single_service_json["mode_http_status_code"]]
+                
+                
+                
+
                 
                 servicename = single_service_json["servicename"]
                 single_service_json.pop("servicename")
-                # print(single_service_json)
-                single_service_df = (
-                    pl.DataFrame(
-                        single_service_json,
+                
+
+                for key, value in single_service_json.items():
+                    if isinstance(value, list):
+                        print(f"{key}: length {len(value)}")
+                    else:
+                        print(f"{key}: single value with type {type(value)}")
+
+
+                
+                try:
+                    single_service_df = (
+                        pl.DataFrame(
+                            single_service_json,
+                        )
+                    ).with_columns(
+                        [
+                            pl.col("spanID").list.join(" - "),
+                            pl.col("operationName").list.join(" - "),
+                            pl.col("starttime").list.join(" - "),
+                        ]
                     )
-                ).with_columns(
-                    [
-                        pl.col("spanID").list.join(" - "),
-                        pl.col("operationName").list.join(" - "),
-                        pl.col("starttime").list.join(" - "),
-                    ]
-                )
+                    print(len(single_service_df['mean_max_depth']))
+                    print("nach single service df creation", single_service_json)
+                    print("single_service_df: ", single_service_df)
+                except pl_exc.ShapeError:
+                    print("*********************************ShapeError*********************************")
+                    '''print("single_service_json: ", single_service_json)
+                    print("single_service_json.keys(): ", single_service_json.keys())
+                    print("single_service_json.items(): ", single_service_json.items())
+                    print("single_service_json mean_max_depth: ", single_service_json['mean_max_depth'])
+                    print("single_service_json mean_max_depth TYPE: ", type(single_service_json['mean_max_depth']))
+                    print("single_service_json mean_max_depth LENGTH: ", len(single_service_json['mean_max_depth']))
+
+                    #print("single_service_json mean_min_depth: ", single_service_json['mean_min_depth'])
+                    #print("single_service_json mean_mean_depth: ", single_service_json['mean_mean_depth'])
+                    #print("single_service_json mean_self_depth: ", single_service_json['mean_self_depth'])
+                    print("single_service_json series of SpanID: ", single_service_json['spanID'])
+                    print("single_service_json series of SpanID TYPE: ", type(single_service_json['spanID']))
+                    print("single_service_json series of SpanID LENGTH: ", len(single_service_json['spanID']))'''
+
+                    for key, value in single_service_json.items():
+                        if isinstance(value, list):
+                            print(f"{key}: length {len(value)}")
+                        else:
+                            print(f"{key}: single value with type {type(value)}")
+                            
+
+                    
+                    with open("single_service_json_failure.csv", "w", newline="") as f:
+                        w = csv.DictWriter(f, single_service_json.keys())
+                        w.writeheader()
+                        w.writerow(single_service_json)
+                
+                    single_service_df = (
+                        pl.DataFrame(
+                            single_service_json,
+                        )
+                    ) #.with_columns(
+                    #    [
+                    #        #pl.col("mean_max_depth").list.join(" - "),
+                    #        pl.col("spanID").list.join(" - "),
+                    #        pl.col("operationName").list.join(" - "),
+                    #        pl.col("starttime").list.join(" - "),
+                    #    ]
+                    #)
+                    print("Exception handling: nach single service df creation", single_service_json)
+                    single_service_df.write_csv("single_service_df_inException.csv")
 
                 single_service_df = self.__i_dont_have_consistent_typing_and_it_sucks(
                     single_service_df.columns, single_service_df
@@ -357,3 +423,9 @@ class TracesInOneRowExploder:
         for column in column_names:
             res[column] = f"{prefix}-{column}"
         return res
+
+
+
+
+
+
