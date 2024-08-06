@@ -221,3 +221,4 @@ class JoinManager:
                 f"{stats}\n\n"
                 f"___ Processing time: \n"
             )
+

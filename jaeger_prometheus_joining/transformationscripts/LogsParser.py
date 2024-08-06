@@ -3,6 +3,7 @@ from pathlib import Path
 
 import polars as pl
 from logparser.AEL import LogParser
+from datetime import timedelta
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -45,12 +46,17 @@ class LogsParser:
                   .with_columns([
                         pl.lit(filename.split(".")[0]).alias("source-servicename"),
                         #("ts-" + pl.col("LoggingReporter").str.split("] ").list.get(1).str.split(".").list.get(0) + "-service").alias("source-servicename"),
-                        (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().dt.round(self.settings.rounding_acc).alias("timestamp"),
-                        (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().alias("original_timestamp")
+                        (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().dt.round(self.settings.rounding_acc).alias("timestamp").apply(lambda x: x + timedelta(hours=self.settings.timestamp_setting)),
+                        (pl.col("Date") + " " + pl.col("Time")).str.to_datetime().alias("original_timestamp").apply(lambda x: x + timedelta(hours=self.settings.timestamp_setting)),
                   ])
                   .drop("LoggingReporter"))
-
+            #change column value
+            #print("DF ORIGINAL TIMESTAMP LOGS BEVORE: ", df['original_timestamp'])
+            #df = df.select(pl.col('original_timestamp') + timedelta(hours=self.settings.timestamp_setting))
+            print("DF ORIGINAL TIMESTAMP LOGS AFTER: ", df['original_timestamp'])
+            print("DF TIMESTAMP LOGS AFTER: ", df['timestamp'])
             return df
+        
             #self.__write_to_disk(df, output_path.joinpath("LOGS_joinable.parquet"))
 
 

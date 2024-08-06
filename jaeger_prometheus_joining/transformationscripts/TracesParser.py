@@ -156,7 +156,7 @@ class TracesParser:
             )
                      
         )
-
+        print("DF TRACES Original timestamp: ", df['original_timestamp'])
         return df
 
     def __write_to_disk(self, df: pl.DataFrame, output_path):
@@ -164,3 +164,4 @@ class TracesParser:
             if not os.path.exists(output_path.parents[0]):
                 os.makedirs(output_path.parents[0])
             df.write_parquet(output_path)
+

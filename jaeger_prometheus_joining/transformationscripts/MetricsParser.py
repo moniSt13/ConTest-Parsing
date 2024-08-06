@@ -121,8 +121,6 @@ class MetricsParser:
                 col("values").list[1].cast(Float64).alias(rename_name),
             ]
         ).drop("values", "__name__")
-
-        
         return df, rename_name
 
     def __filter_data(self, df: pl.DataFrame, rename_name: str):
@@ -143,3 +141,4 @@ class MetricsParser:
             os.makedirs(output_path.parents[0])
 
         df.write_parquet(output_path)
+

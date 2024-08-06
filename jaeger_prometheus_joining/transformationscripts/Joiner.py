@@ -6,6 +6,7 @@ from time import sleep
 
 import polars as pl
 from polars import when, col, lit
+from datetime import timedelta
 
 from jaeger_prometheus_joining.controlflow.ParseSettings import ParseSettings
 
@@ -32,6 +33,7 @@ class Joiner:
         df_tracing, df_logs, df_metrics = self.__load_data(
             tracing_filepath, logs_filepath, metrics_filepaths
         )
+        print("log df: ", df_logs.glimpse())
         print("Before joining traces and metrics")
         df_joined = self.__join_data(df_tracing, df_metrics)
         print("After joining traces and metrics")
@@ -228,11 +230,18 @@ class Joiner:
             'numberOfUniqueEventIds': [],
         }
         list_times = df.get_column('starttime').unique()
-
+        print("list_times: ", list_times)
         microservices = log_df.get_column('source-servicename').unique()
-        
+        print("microservices: ", microservices)
+        #log_df['original_timestamp'] = log_df['original_timestamp'] - timedelta(hours=-2)
+
         for date in df.get_column('starttime').unique():
+            
+            #print("added date by an hour: ", date + timedelta(hours=2))
+            #date = date + timedelta(hours=2)
+
             for microservice in log_df.get_column('source-servicename').unique():
+                print("MICROSERVICE: ", microservice)
                 list_of_occurances['servicename'].append(microservice)
                 list_of_occurances['starttime'].append(date)
                 #filter df that is smaller than date and grouped by microservice
@@ -241,6 +250,7 @@ class Joiner:
                 list_of_occurances['NumberofOccurances_error'].append(log_df.filter(col('original_timestamp') <= date).filter(col('Level') == "ERROR").filter(col('source-servicename') == microservice).height)
                 list_of_occurances['NumberofOccurances_info'].append(log_df.filter(col('original_timestamp') <= date).filter(col('Level') == "INFO").filter(col('source-servicename') == microservice).height)
                 list_of_occurances['numberOfUniqueEventIds'].append(log_df.filter(col('original_timestamp') <= date).filter(col('source-servicename') == microservice).select("EventId").unique().height)        
+        #print("list of occurances: ", list_of_occurances)
         # for whole system -> microservice unspecific
         #list_of_occurances['NumberofOccurances_all'].append(log_df.filter(col('original_timestamp') <= date).height)
         #iterate of log_df['original_timestamp'] and count how many logs are available until date
@@ -357,3 +367,4 @@ class Joiner:
     def __write_to_disk(self, df: pl.DataFrame, output_path: Path):
         if self.settings.save_to_disk:
             df.write_csv(output_path)
+

@@ -1,8 +1,5 @@
 """
-WIP
-
-This isn't working and should be in feature engineering. This has really high resource consumption and multiprocessing
-didn't help.
+WIP: This class is responsible for imploding a trace into one line. Every spans is appended to the one-line-trace. The effect is that the row-count
 
 Implodes a trace into one line. Every spans is appended to the one-line-trace. The effect is that the row-count
 decreases dramatically and the column count increases. Column counts can go over 1000 and is not static.
@@ -66,7 +63,7 @@ class TracesInOneRowExploder:
             "container_cpu_user_seconds_total", #
             "container_cpu_system_seconds_total", #
             "container_memory_usage_bytes", #
-            "container_threads" #
+            "container_threads", #
         ]
 
         # Split df into groups of their traces
@@ -82,10 +79,7 @@ class TracesInOneRowExploder:
                         pl.lit(None, pl.Float32).alias(metric)
                     )
 
-            #print("traceid: ", trace_id, " trace_df: ", trace_df)
-            print("Before aggregating the columns")
-            print("trace_df columns - max depth", trace_df['max_depth'])
-            print("trace_df columns spanID", trace_df['spanID'])
+            
             aggregated_df = trace_df.group_by(col("servicename")).agg(
                 col("max_depth").mean().alias("mean_max_depth"),
                 col("min_depth").mean().alias("mean_min_depth"),
@@ -131,14 +125,14 @@ class TracesInOneRowExploder:
             
             one_row_traces = []
             for single_service_json in aggregated_df.iter_rows(named=True):
-                #print("single_service_json: ", single_service_json)
+                
                 
                 single_service_json["spanID"] = [single_service_json["spanID"]]
                 single_service_json["starttime"] = [single_service_json["starttime"]]
                 single_service_json["operationName"] = [
                     single_service_json["operationName"]
                 ]
-                #single_service_json["mode_http_status_code"] = [single_service_json["mode_http_status_code"]]
+                single_service_json["mode_http_status_code"] = [single_service_json["mode_http_status_code"]]
                 
                 
                 
@@ -147,13 +141,6 @@ class TracesInOneRowExploder:
                 servicename = single_service_json["servicename"]
                 single_service_json.pop("servicename")
                 
-
-                for key, value in single_service_json.items():
-                    if isinstance(value, list):
-                        print(f"{key}: length {len(value)}")
-                    else:
-                        print(f"{key}: single value with type {type(value)}")
-
 
                 
                 try:
@@ -166,34 +153,11 @@ class TracesInOneRowExploder:
                             pl.col("spanID").list.join(" - "),
                             pl.col("operationName").list.join(" - "),
                             pl.col("starttime").list.join(" - "),
+                            pl.col("mode_http_status_code").list.join(" - "),
                         ]
                     )
-                    print(len(single_service_df['mean_max_depth']))
-                    print("nach single service df creation", single_service_json)
-                    print("single_service_df: ", single_service_df)
+                    
                 except pl_exc.ShapeError:
-                    print("*********************************ShapeError*********************************")
-                    '''print("single_service_json: ", single_service_json)
-                    print("single_service_json.keys(): ", single_service_json.keys())
-                    print("single_service_json.items(): ", single_service_json.items())
-                    print("single_service_json mean_max_depth: ", single_service_json['mean_max_depth'])
-                    print("single_service_json mean_max_depth TYPE: ", type(single_service_json['mean_max_depth']))
-                    print("single_service_json mean_max_depth LENGTH: ", len(single_service_json['mean_max_depth']))
-
-                    #print("single_service_json mean_min_depth: ", single_service_json['mean_min_depth'])
-                    #print("single_service_json mean_mean_depth: ", single_service_json['mean_mean_depth'])
-                    #print("single_service_json mean_self_depth: ", single_service_json['mean_self_depth'])
-                    print("single_service_json series of SpanID: ", single_service_json['spanID'])
-                    print("single_service_json series of SpanID TYPE: ", type(single_service_json['spanID']))
-                    print("single_service_json series of SpanID LENGTH: ", len(single_service_json['spanID']))'''
-
-                    for key, value in single_service_json.items():
-                        if isinstance(value, list):
-                            print(f"{key}: length {len(value)}")
-                        else:
-                            print(f"{key}: single value with type {type(value)}")
-                            
-
                     
                     with open("single_service_json_failure.csv", "w", newline="") as f:
                         w = csv.DictWriter(f, single_service_json.keys())
@@ -212,7 +176,7 @@ class TracesInOneRowExploder:
                     #        pl.col("starttime").list.join(" - "),
                     #    ]
                     #)
-                    print("Exception handling: nach single service df creation", single_service_json)
+                    #print("Exception handling: nach single service df creation", single_service_json)
                     single_service_df.write_csv("single_service_df_inException.csv")
 
                 single_service_df = self.__i_dont_have_consistent_typing_and_it_sucks(
@@ -279,20 +243,14 @@ class TracesInOneRowExploder:
             return pl.DataFrame()
 
     def __add_SystemWideMetrics(self, df_with_singleline_traces: pl.DataFrame, df_with_system_wide_metrics: pl.DataFrame) -> pl.DataFrame:
-        print(df_with_system_wide_metrics.glimpse())
-        #rename column
-        #df_with_system_wide_metrics = df_with_system_wide_metrics.rename({
-        #    "measure_time": "starttime"
-        #})
+        
         # join for all columns with start times in df_with_singleline_traces
         starttime_columns = [col for col in df_with_singleline_traces.columns if "starttime" in col]
-        print("starttime_columns : ", starttime_columns)
+        
         
         #for counter in range(len(starttime_columns)):
         counter = 0
         for microservice_starttime in starttime_columns:
-            
-            print("COUNTER FOR JOIN: ", counter)
             df_with_singleline_traces = df_with_singleline_traces.join(df_with_system_wide_metrics, left_on=microservice_starttime, right_on="systemWide-measure_time", how="left", suffix=str(counter))
             counter += 1
         df_with_singleline_traces.write_csv("df_with_singleline_traces.csv")
@@ -323,24 +281,30 @@ class TracesInOneRowExploder:
         #select only a non-None value to be kept in the df of systemWide metrics
         
         first_items_from_tmp_list_columnames_transposed = [item[0] for item in tmp_list_columnames_transposed]
-        print("first items in transposed columnsnames list: ", first_items_from_tmp_list_columnames_transposed)
+        #print("first items in transposed columnsnames list: ", first_items_from_tmp_list_columnames_transposed)
         for firstElementInRow in first_items_from_tmp_list_columnames_transposed:
             tmp_list_for_s = []
             for n in range(len(df_with_singleline_traces[firstElementInRow])):
+                tmp = 0
+                counter = 0
                 for list_length in range(len(df_with_singleline_traces[firstElementInRow][n])):
                     if df_with_singleline_traces[firstElementInRow][n][list_length] != None:
-                        tmp = df_with_singleline_traces[firstElementInRow][n][list_length]
+                        tmp = tmp + df_with_singleline_traces[firstElementInRow][n][list_length]
+                        counter = counter + 1
                         #print("df apple_run_list_length:", firstElementInRow, "    :", df_with_singleline_traces[firstElementInRow][n][list_length])
-                        tmp_list_for_s.append(tmp)
+                if counter >0:
+                    tmp_list_for_s.append(tmp/counter)
+                else: #if no values at all found to be merged to this timeframe
+                    tmp_list_for_s.append(None)
             s = pl.Series(firstElementInRow+"_final", tmp_list_for_s)
-            print("tmp_list_for_first element in row:", firstElementInRow, "and Series: ", s)
+            
             df_with_singleline_traces = df_with_singleline_traces.hstack([s])  
         #delete rows in that include columns_to_change
         for rows in tmp_list_columnames_transposed:
             for columnsToChange in rows:
                 df_with_singleline_traces = df_with_singleline_traces.drop(columnsToChange)
 
-        print("Concatenated df_with_singleline_traces: ", df_with_singleline_traces.glimpse())
+        #print("Concatenated df_with_singleline_traces: ", df_with_singleline_traces.glimpse())
         return df_with_singleline_traces
 
     
@@ -423,6 +387,7 @@ class TracesInOneRowExploder:
         for column in column_names:
             res[column] = f"{prefix}-{column}"
         return res
+
 
 
 
