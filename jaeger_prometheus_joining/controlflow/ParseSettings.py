@@ -51,7 +51,8 @@ class ParseSettings:
         self.tree_settings: TreeSettings = TreeSettings()
         """In the process of extracting even more information every trace will be parsed into a tree structure. You 
         can provide even more settings. The code for this functionality lies in another package (by the same author)"""
-
+        self.timestamp_setting = 0
+        """ If your logs are behind of the actual time by metrics and traces, you can set this to the amount of hours. 0 Indicates that it was collected in the same time zone"""
     @property
     def source(self) -> Path:
         """Source path to the root of your data."""
