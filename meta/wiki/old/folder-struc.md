@@ -1,6 +1,6 @@
-# Ordner-Struktur der Source-Dateien
+# Folder structure of Source files
 
-Beispielstruktur der Source-Dateien, welche verarbeitet werden:
+Example structure of source files that are included in the data processing
 
 ```
 .
