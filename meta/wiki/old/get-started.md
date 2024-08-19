@@ -1,4 +1,4 @@
-# Benötigtes Tooling
+# Required Tooling
 
 #### Minimal
 
@@ -22,25 +22,23 @@
 
 ___
 
-## Erste Transformationen
+## First Transformationen
 
-Entrypoint ist immer das Jupyter Notebook [control-flow](../../src/control-flow.ipynb), in welchem alle Parameter
-konfiguriert und angepasst werden können. Weiters wird hier der Ablauf der Transformation festgelegt.
+The entry point is always the Jupyter Notebook [control-flow](../../src/control-flow.ipynb), where all parameters can be configured and adjusted. Additionally, the transformation workflow is defined here.
 
-| Parametername              | Beschreibung                                                                                                                                                                       | Erlaubte Eingabefelder |
+| Parametername              | Description                                                                                                                                                                       | Allowed  input field |
 |----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|
-| source                     | Pfad zum Root-Ordner, in welchem alle Dateien liegen (siehe [Ordnerstruktur](folder-struc.md))                                                                                   | $HOME/data/            |
-| out                        | Pfad, in welchem alle transformierten Dateien abgelegt werden                                                                                                                      | ../out                 |
-| test_mode                  | Modus, in welchem nur ein Bruchteil von Daten hergezogen werden, um lange Laufzeiten zu verhindern                                                                                 | True/False             |
-| rounding_acc               | Alle Zeitstempel werden gerundet, um das Joinen anzugeben (siehe [Runden der Zeitstempel](rounding-identifiers.md))                                                              | 1s, 30s, 1m            |
-| save_to_disk               | Parameter, welcher bestimmt, ob die Dateien auch auf die Festplatte geschrieben werden                                                                                             | True/False             |
-| output_vis                 | Parameter, mit welchem Debugging-Outputs von Dataframes oda Schemen ausgegeben werden können. Achtung: Gewisse Entwicklungsumgebungen können die Menge an Output nicht verarbeiten | True/False             |
-| drop_null                  | Parameter, welcher eine gewisse Grundfilterung vornimmt. Leere oder null Metriken werden schon vor dem Joinen bereinigt. Duplikate werden entfernt                                 | True/False             |
-| additional_name_tracing    | Zusätzlicher Name, welcher den Tracing-Outputs angehängt wird                                                                                                                      | string                 |
-| additional_name_monitoring | Zusätzlicher Name, welcher den Monitoring-Outputs angehängt wird                                                                                                                   | string                 |
+| source                     | Path to the root folder where all files are located (see [Folder structure](folder-struc.md))                                                                                   | $HOME/data/            |
+| out                        | Path where all the transformed files are stored                                                                                                                 | ../out                 |
+| test_mode                  | Mode in which only a fraction of the data is processed to prevent long runtime                                                                                | True/False             |
+| rounding_acc               | All timestamps are rounded to facilitate joining. (see [rounding of timestamps](rounding-identifiers.md))                                                              | 1s, 30s, 1m            |
+| save_to_disk               | Parameter that determines whether the files are also written to the disk                                                                                             | True/False             |
+| output_vis                 | Parameter that allows debugging outputs of dataframes or schemas to be generated. Note: Some development environments may not handle the amount of output. | True/False             |
+| drop_null                  | Parameter that performs a basic filtering. Empty or null metrics are cleaned up before joining, and duplicates are removed.                                 | True/False             |
+| additional_name_tracing    | Additional name that is appended to the tracing outputs                                                                                                                      | string                 |
+| additional_name_monitoring | Additional name that is appended to the monitoring outputs                                                                                                                   | string                 |
 
 
-Nach dem Konfigurieren aller Parameter alle Zellen durchlaufen. (Intellij: Ctrl + Alt + Shift + Enter)
+After configuring all parameters, run all cells. (Intellij: Ctrl + Alt + Shift + Enter)
 
-
-Für weitere Infos gibt es hier eine [Erklärung der einzelnen Notebooks](documentation.md).
+For additional Information: [Description of individual notebooks](documentation.md).
