@@ -1,19 +1,13 @@
 # ConTest - Parsing
 
-Verarbeitet Prometheus- und Jaeger-Tracing-Daten und versucht diese miteinander zu joinen.
+Merges together Logs, traces, and monitoring data to get them into to format of one sample per line over all microservices.
 
-#### Alte Dokumentation unter folgende Links:
-* [Alle Skripte und deren Ablauf, als das Ganze noch Jupyter Skripte waren](meta/wiki/old/documentation.md)
-* [Ordnerstruktur Beispiel ohne Logs](meta/wiki/old/folder-struc.md)
-* [Alte Parameterbeschreibung und benötigtes Tooling](meta/wiki/old/get-started.md)
-* [Erkenntnisse/Probleme/Workarounds](meta/wiki/old/insights-experience.md)
-* [Werte zum Runden](meta/wiki/old/rounding-identifiers.md)
 
-#### Wie kann ich pdocs bauen?
+#### How can I build pdocs?
 ```
 pdoc ./jaeger_prometheus_joining -o ./pdocs
 ```
-Es sollte ein HTML generiert werden im 'pdocs'-Verzeichnis.
+An HTML file should be generated in the 'pdocs'-folder.
 
 ---
 
@@ -21,7 +15,7 @@ Es sollte ein HTML generiert werden im 'pdocs'-Verzeichnis.
 
 * Python 3.11
 
-Parsing der Tracing- und Monitoringdaten:
+Parsing of traces (Jaeger), and metrics (Prometheus) data:
 * Polars
 * PyArrow
 * ConTest-Tree
@@ -30,11 +24,11 @@ Parsing der Logdaten:
 * logpai/logparser
 * Pandas
 
-Zum Visualisieren der Traces:
+For visualization of traces:
 * neo4j
 * neo4jvis
 
-Für die Docs:
+For the documentation:
 * Pdoc
 
 ---
@@ -42,39 +36,39 @@ Für die Docs:
 ## Packages
 
 * controlflow
-  * Bestimmt den Ablauf und die grundsätzliche Orchestrierung.
+  * Is responsible for the sequences and the basic orchestration.
 * featureengineering
-  * Fügt neue Daten zu den Grunddaten hinzu bzw ändert diese markant.
+  * Adds new data to the basic data and changes them accordingly.
 * transformationscripts
-  * Transformiert bzw. macht etwas mit den Grunddaten. 
+  * transformes the basic data. 
 * util
-  * Visualisierung, Timers, andere Utilityfunktioen
-
+  * Visualization, Timers, other Utilityfunctions
+  * 
 ---
 
-## Ablauf
+## Sequences of data transformation to final output
 
-siehe Joinmanager:
-1. Finden der Source-Daten 
-2. Ausgabe von Statistiken (Wieviel Files, etc)
-3. Clearen des Outputfolders 
-4. Parsing von den Log-Daten 
-5. Parsing von den Prometheus-Daten 
-6. Parsing von den Tracing-Daten 
-7. Joinen aller Daten 
-8. Neue Informationen aus den Daten ziehen 
-9. Struktur der Daten ändern (1 Zeile pro Trace)
-10. Graphen generieren
+see Joinmanager:
+1. Finding of source data 
+2. Show statistics about identified source data
+3. Clear Output Folder in case this was there for the previous run 
+4. Parsing of Log-Data 
+5. Parsing of metric-Data (Prometheus)
+6. Parsing of tracing-Data (Jaeger)
+7. Join of all data 
+8. create insights from joined data 
+9. change structure of data for use in PLS-SEM model (1 line per trace)
+10. generate graph of tracing information and merged information from logs and metrics
 
-## Aufbau der Transformationsklassen
+## Structure der Transformationclasses
 
-Grundsätzlich sollten fast alle Klassen eine Methode namens ```start()``` sein. 
+Every class should start with the method ```start()``` 
 
-Im besten Fall ist das auch die einzige Methode, welche public ist. Diese Methode sollte auch nur andere Methoden aufrufen und somit auch nur 'orchestrieren'.
+In the best case, it should be the only method, that is public. This method should call other methods and only be used for the 'orchestration'.
 
-## Ordner-Struktur der Source-Dateien
+## Folder-Structure of the source data
 
-Beispielstruktur der Source-Dateien, welche verarbeitet werden:
+Example of a folder structure of the source data, which this Code is able to transform:
 
 ```
 .
@@ -118,9 +112,9 @@ Beispielstruktur der Source-Dateien, welche verarbeitet werden:
     └── etc...
 ```
 
-## Konfigurationseinstellungen
+## Possible Configurations
 
-Mithilfe der Klasse ParseSettings kann man einfach die Konfiguration ändern. Dabei gibt es folgende Optionen.
+With the help of the class '''ParseSettings''' you can change the configurations, and you have the following options:
 
 * source
 * out
@@ -128,7 +122,7 @@ Mithilfe der Klasse ParseSettings kann man einfach die Konfiguration ändern. Da
 * rounding_acc
 * save_to_disk
 * output_vis
-* drop_null (rename!)
+* drop_null
 * additional_name_tracing
 * additional_name_metrics
 * final_name_suffix
@@ -141,3 +135,13 @@ Mithilfe der Klasse ParseSettings kann man einfach die Konfiguration ändern. Da
   * print_data
   * print_data_with_accessing_field
   * accessing_field
+ 
+
+  
+#### Old Documentation can be found under the following links:
+* [All scripts and their execution, when we started as Jupyter notebook](meta/wiki/old/documentation.md)
+* [folder structure without Logs](meta/wiki/old/folder-struc.md)
+* [old description of parameters and the necessary tooling](meta/wiki/old/get-started.md)
+* [Insights/Problems/Workarounds](meta/wiki/old/insights-experience.md)
+* [Where rounding is necessary](meta/wiki/old/rounding-identifiers.md)
+
