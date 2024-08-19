@@ -1,6 +1,6 @@
-# Welche Werte können zum Runden verwendet werden?
+# What values can be used for rounding?
 
-The every and offset argument are created with the the following string language:
+The every and offset arguments are created with the the following string language:
 
     1ns # 1 nanosecond
 
@@ -29,4 +29,4 @@ These strings can be combined:
     3d12h4m25s # 3 days, 12 hours, 4 minutes, and 25 seconds
 
 
-siehe [offizielle Dokumentation](https://pola-rs.github.io/polars/py-polars/html/reference/series/api/polars.Series.dt.round.html)
+see [official documentation](https://pola-rs.github.io/polars/py-polars/html/reference/series/api/polars.Series.dt.round.html)
