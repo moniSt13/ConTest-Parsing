@@ -1,16 +1,12 @@
-# Erkenntnisse
+# Insights
 
-### Zeitstempel
+### Timestamps
 
-Prometheus sammelt in regelmäßigen Abständen seine Metriken. Gegenübergestellt zeichnet Jaeger Traces auf, welche zum
-einen sehr lang und umfangreich, aber auch nur ganz kurz sein können. Deswegen kann es passieren, dass ein Jaeger Trace
-zwischen die Messzeitpunkte von Prometheus fällt. Generell wird es nicht häufig passieren, dass sich diese Zeitstempel
-perfekt überschneiden. Deswegen müssen die Zeitstempel gerundent, oder mittels asof-join gejoint werden. Falls die
-exportierten Daten in einem ganz anderen Zeitfenster liegen, erhält man logischerweise keine Ergebnisse.
+Prometheus collects its metrics at regular intervals. In contrast, Jaeger traces can be either very long and detailed or very short. As a result, it can happen that a Jaeger trace falls between Prometheus' measurement intervals. Generally, it will not be common for these timestamps to align perfectly. Therefore, timestamps need to be rounded or joined using an as-of join. If the exported data is in a completely different time window, logically, no results will be obtained.
 
 ### Container, Service, Pod
 
-Prometheus bringt bei seinen Metriken viele verschiedene Labels mit:
+Prometheus has several labels:
 
 * container
 * endpoint
@@ -20,39 +16,33 @@ Prometheus bringt bei seinen Metriken viele verschiedene Labels mit:
 * pod
 * service
 
-Jaeger auch:
+Jaeger too:
 
 * servicename
 * hostname
 * ip
 * component
 
-Welche Labels was bedeuten kann stark von der Konfiguration abhängen. Hierbei wurde der hostname und der pod verglichen.
+The meaning of which labels can vary significantly depending on the configuration. In this case, the hostname and the pod were compared.
 
 ### Container = 'POD' oder null
 
-In vielen Prometheus-Einträgen (oder meist genau 50 Prozent) findet man den Container namens "POD". Dabei handelt es
-sich bei dem 'POD' Containern um sogenannte 'pause' Container. Dieser ist sozusagen der 'parent' Container, welcher
-anderen Containern den Linux-Namespace teilt, etc. Mehr
-dazu [hier](https://www.ianlewis.org/en/almighty-pause-container). Jedoch sind diese Daten meist nicht relevant,
-deswegen wurden diese gefiltert.
+In many Prometheus entries (or often exactly 50 percent), you will find a container named "POD." These 'POD' containers are known as 'pause' containers. They essentially act as the 'parent' container, sharing the Linux namespace with other containers and so on. More specifically, the pause container is used to hold the network namespace for the pod, providing isolation and managing network resources for the other containers within the pod. [please see there](https://www.ianlewis.org/en/almighty-pause-container). However, quite often this data might not be relevant, thus we filtered them.
 
 ### Duplicate Traces
 
-Da ein Trace mehrere Services überspannen kann, sind diese Traces auch mehrfach vorhanden in den jeweiligen Exports
-dieses Services. Diese müssen gefiltert werden. Sprich die Daten machen einen größeren Anschein als sie es wirklich
-sind.
+Since a trace can span multiple services, these traces will also appear multiple times in the respective exports of these services. They need to be filtered out. In other words, the data might seem larger than it actually is.
 
-### Format der Metriken
+### Format of metrics
 
-Ein sehr großes Problem war das Format der Metriken. Prometheus zeichnet diese so auf:
+A very significant issue was the format of the metrics. Prometheus records them in the following way:
 
 | __name__        | values                          | container | ... |
 |-----------------|---------------------------------|-----------|-----|
 | cpu_usage_total | [[1, 1], [2, 1], [3, 1], ...]   | abcd1234  | ... |
 | cpu_usage_total | [[1, 1], [2, 1.5], [3, 1], ...] | efgh5678  | ... |
 
-Am Ende möchte aber ein Format vorliegen haben, in welchem die Daten als Spalte angesehen werden:
+In the end, however, the desired format should be one in which the data is viewed as columns:
 
 | container | measure_time | cpu_usage_total | ... |
 |-----------|--------------|-----------------|-----|
@@ -63,24 +53,18 @@ Am Ende möchte aber ein Format vorliegen haben, in welchem die Daten als Spalte
 | efgh5678  | 2            | 1.5             | ... |
 | efgh5678  | 3            | 1               | ... |
 
-### Datenüberschneidung
+### Merging of data
 
-Manche Daten überschneiden merklich besser als andere, nicht nur weil mehr Daten vorliegen. Manche überschneiden zB.
-überhaupt nicht. Im Service ts-admin-basic-info-service existieren über 2400 Metriken in großen Mengen. Hier kann auch
-zu jeder Metrik ein Eintrag gefunden werden und gejoint werden. Im ts-auth-mongo-4.4.15 existiert zB nur die
-Überschneidung zu container_memory_working_set_bytes und container_cpu_usage_seconds_total. Bei genauerer Inspektion
-liegt jedoch auch eine 22 MB große Datei für die Metrik container_network_transmit_packets_total vor. Bei dieser ergibt
-sich kein einziges Ergebnis, was mich ein bisschen stutzig macht.
+Some data overlaps significantly better than others, not just because there is more data available. For instance, some data might not overlap at all. In the service ts-admin-basic-info-service, there are over 2400 metrics in large quantities. Each metric can be found and joined. In contrast, in ts-auth-mongo-4.4.15, there is overlap only with container_memory_working_set_bytes and container_cpu_usage_seconds_total. However, upon closer inspection, there is also a 22 MB file for the metric container_network_transmit_packets_total. Yet, this file yields no results, which is a bit puzzling.
 
-Diese Datei wurde sich angesehen und aus den 645817 Einträgen sind:
+This file was examined, and out of the 645,817 entries:
 
 * 47046 null
-* 598771 mit dem Container "POD"
+* 598771 with container: "POD"
 
-Diese beiden Zahlen zusammengerechnet: 645817
+To summarise this two: 645817
 
-Falls nur der Container null ist und der Pod nicht, können diese noch weiterverarbeitet werden, aber in folgendem
-Screenshot sieht man, dass das nicht funktionieren wird:
+If only the container is null and the pod is not, these can still be further processed. However, in the following screenshot, you can see that this will not work:
 ![img.png](container_network_transmit_packets_total_STATISTICS.png.png)
 
 ### Zahlen und Fakten:
@@ -97,10 +81,9 @@ Screenshot sieht man, dass das nicht funktionieren wird:
 | ts-order-service_springstarterdataMongoDB_2.0.0.RELEASE_2022-07-11  | 54.803428MB     | 30.214909MB  | 16        | 1455     |
 | ts-order-service_mongodb_4.4.15_2022-07-12                          | 49.008528MB     | 20.715173MB  | 14        | 1304     |
 
-Dabei hat das Datenset 10 Spalten, falls kein einziger Join durchgeführt werden kann. 16 Spalten sind 4 Metriken, welche
-gejoint werden konnten.
+The dataset has 10 columns if no joins can be performed at all. There are 16 columns for the 4 metrics that could be joined.
 
-Die Korrelationsmatrix (Pearson), die dabei ensteht ist folgende:
+The correlation matrix (Pearson) that results is as follows:
 
 |            | monitoring | tracing | col    | row    |
 |------------|------------|---------|--------|--------|
